@@ -1,0 +1,15 @@
+streamlit
+sqlalchemy
+psycopg2-binary
+pandas
+plotly
+scikit-learn
+transformers
+accelerate
+bitsandbytes
+sqlglot
+faker
+reportlab
+xlsxwriter
+python-dotenv
+matplotlib
