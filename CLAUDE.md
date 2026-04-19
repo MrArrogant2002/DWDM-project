@@ -6,57 +6,84 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Setup
-python3 -m venv .venv && source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env   # then edit DATABASE_URL if needed
+cp .env.example .env
 
-# Database
-PYTHONPATH=src python3 -m autonomous_sql_agent.cli init-db
-PYTHONPATH=src python3 -m autonomous_sql_agent.cli seed-db --orders 100000
+# Database — SQLite (zero setup, default)
+PYTHONPATH=src python -m autonomous_sql_agent.cli init-db
+PYTHONPATH=src python -m autonomous_sql_agent.cli seed-db --orders 10000
 
 # Run app
 streamlit run app/streamlit_app.py
 
 # Tests
 PYTHONPATH=src pytest tests/
-PYTHONPATH=src pytest tests/test_sql_validator.py   # single test file
+PYTHONPATH=src pytest tests/test_sql_validator.py   # single file
+PYTHONPATH=src pytest tests/ -k "test_name"         # single test
+
+# Lint / format
+ruff check src/ tests/
+black src/ tests/
 ```
+
+`PYTHONPATH=src` is required for all CLI and test commands — the package is not installed.
 
 ## Architecture
 
-Single-repo academic demo. No microservices — all agents are Python classes coordinated by one `AnalysisOrchestrator`.
+Single-repo M.Tech prototype. No microservices — all agents are Python classes coordinated by `AnalysisOrchestrator`.
 
-**Agent pipeline** (`orchestrator.py`): `IntentAgent → PlanningAgent → SchemaAgent → SQLGenerationAgent → SQLValidationAgent → ExecutionAgent → PatternDiscoveryAgent → ReportAgent`. The orchestrator loops `SQLGenerationAgent → SQLValidationAgent → ExecutionAgent` up to `MAX_GENERATION_RETRIES` on failure before raising.
+### Two data modes
 
-**Key modules** (`src/autonomous_sql_agent/`):
-- `models.py` — Pydantic dataclasses: `AnalysisRequest`, `AgentState`, `AnalysisResponse`, `ChartSpec`
-- `config.py` — `AppConfig.from_env()` reads all settings from `.env`; no hardcoded values elsewhere
-- `model.py` — `HuggingFaceSQLGenerator` wraps `defog/sqlcoder-7b-2` in 4-bit quantization; falls back to rule-based generator if model load fails
-- `metadata.py` — `SchemaMetadataService` introspects PostgreSQL and builds the schema summary + business glossary injected into prompts
-- `sql_validation.py` — `SQLValidator` uses `sqlglot` to parse and enforce SELECT-only policy before any execution
-- `database.py` — `DatabaseManager`: read-only analysis path + write path only for init/seed/export/session logging
-- `analytics.py` / `charting.py` — `AnalyticsService` (z-score, IsolationForest, moving average) and `ChartService` (Plotly)
-- `exporters.py` — CSV, XLSX (two-sheet), PDF (reportlab) exports written to `EXPORT_DIR`
+**Mode 1 — Built-in warehouse**: run `init-db` + `seed-db` to populate a synthetic retail star schema (`fact_orders`, `dim_customer`, etc.) defined in `data/warehouse_schema.sql`.
 
-**Warehouse schema** (`data/warehouse_schema.sql`): star schema — `dim_customer`, `dim_product`, `dim_date`, `dim_region`, `dim_channel`, `fact_orders`, `fact_order_items`, `fact_returns`.
+**Mode 2 — CSV upload**: user uploads a CSV in the Streamlit UI. `CSVIngestor` (`csv_ingestion.py`) auto-builds a star schema from it (fact table + one dim table per low-cardinality column) and writes it to the same SQLite database. After upload, `orchestrator.set_active_blueprint(blueprint)` scopes all queries to only those tables.
+
+### Two LLM modes
+
+**API mode** (when `HF_TOKEN` is set): calls `HF_INFERENCE_MODEL` (default `Qwen/Qwen2.5-Coder-7B-Instruct`) via HuggingFace Inference API. No local GPU needed.
+
+**Fallback mode** (no token): `HuggingFaceSQLGenerator._fallback_candidate()` uses hand-written rule-based SQL templates. Covers top-N, trend, returns-by-region, segments, and a generic aggregation. Always works offline.
+
+### Agent pipeline (`orchestrator.py`)
+
+```
+IntentAgent → PlanningAgent
+  → [metadata_service directly, not SchemaAgent] → schema_context + glossary
+  → retry loop (MAX_GENERATION_RETRIES):
+      SQLGenerationAgent → SQLValidationAgent → ExecutionAgent
+  → PatternDiscoveryAgent → ReportAgent → ExportService → session log
+```
+
+`SchemaAgent` is instantiated but **not called** in `analyze()` — the orchestrator calls `metadata_service.build_schema_summary(table_filter=self._active_table_filter)` directly to honour the CSV upload scope. `SchemaAgent.run()` exists only for standalone testing.
+
+### Key non-obvious behaviours
+
+- **SQL dialect**: `SQLValidator._try_parse()` uses `read="sqlite"` then falls back to dialect-agnostic. Never use `read="postgres"` — prompts explicitly request SQLite syntax (`strftime`, `CAST AS INTEGER`).
+- **`execute_sql()`** in `DatabaseManager` is a raw write-path method called only by `seed.py`. It has no validation — do not expose it to user input.
+- **`_active_table_filter`** on the orchestrator is set per Streamlit session via `set_active_blueprint()`. The cached `@st.cache_resource` orchestrator singleton persists this across reruns; `streamlit_app.py` re-applies it from `session_state` on every rerun.
+- **`models.py`** uses standard `@dataclass(slots=True)`, not Pydantic.
+- **Export failures** are non-fatal — each of CSV/XLSX/PDF is wrapped in its own try/except in `ExportService.export_analysis()`.
 
 ## Environment variables (`.env`)
 
-| Variable | Default |
-|---|---|
-| `DATABASE_URL` | `postgresql+psycopg2://postgres:postgres@localhost:5432/autonomous_sql_dw` |
-| `HF_MODEL_ID` | `defog/sqlcoder-7b-2` |
-| `DEVICE` | `auto` |
-| `STATEMENT_TIMEOUT_MS` | `10000` |
-| `EXPORT_DIR` | `exports` |
-| `PREVIEW_ROW_LIMIT` | `200` |
-| `EXPORT_ROW_LIMIT` | `50000` |
-| `MAX_GENERATION_RETRIES` | `2` |
+| Variable | Default | Notes |
+|---|---|---|
+| `DATABASE_URL` | `sqlite:///data/warehouse.db` | Switch to `postgresql+psycopg2://...` for Postgres |
+| `HF_TOKEN` | *(empty)* | Required for LLM API mode; omit for fallback |
+| `HF_INFERENCE_MODEL` | `Qwen/Qwen2.5-Coder-7B-Instruct` | Model used via HF Inference API |
+| `HF_MODEL_ID` | `defog/sqlcoder-7b-2` | Reserved for future local loading |
+| `DEVICE` | `auto` | `cpu` / `cuda` / `auto` |
+| `STATEMENT_TIMEOUT_MS` | `10000` | Applied via `SET LOCAL statement_timeout` (Postgres only) |
+| `EXPORT_DIR` | `exports` | Auto-created at startup |
+| `PREVIEW_ROW_LIMIT` | `200` | Rows shown in Streamlit table |
+| `EXPORT_ROW_LIMIT` | `50000` | Hard cap on downloaded exports |
+| `MAX_GENERATION_RETRIES` | `2` | SQL retry attempts before returning partial failure |
+| `USE_FALLBACK_ONLY` | `false` | Force rule-based SQL regardless of token |
 
 ## Constraints
 
-- **SQL safety**: only `SELECT` is allowed — reject DDL, DML, multi-statement, and unsafe functions. `sqlglot` parses before any DB call; `EXPLAIN` runs before execution.
-- **Warehouse access**: `DatabaseManager` must remain read-only on the analysis path. Write access is only for `init-db`, `seed-db`, export artifacts, and session history.
-- **Model fallback**: if `defog/sqlcoder-7b-2` cannot load, fall back to `Qwen/Qwen2.5-3B-Instruct` (same prompt contract). Do not break the pipeline.
-- **Export cap**: full exports are capped at 50,000 rows; auto-narrow with a warning above that limit.
-- **`PYTHONPATH=src`** must be set when running tests or the CLI because the package is not installed.
+- **SQL safety**: `SQLValidator` enforces SELECT-only via keyword scan + `sqlglot` parse + `EXPLAIN` before execution. DDL, DML, multi-statement, and unsafe functions (`pg_sleep`, `dblink`, `copy`) are all rejected.
+- **Read-only analysis path**: `DatabaseManager.query_dataframe()` and `explain_query()` are the only methods used during agent analysis. `execute_sql()` and `write_dataframe()` are write-path only.
+- **Model fallback**: if HF API fails for any reason, `generate_candidate()` silently falls back to rule-based SQL. The pipeline must never crash due to model unavailability.
+- **Export cap**: results above `EXPORT_ROW_LIMIT` are truncated with a warning appended to `state.warnings`.

@@ -18,7 +18,7 @@ def _require_sqlalchemy():
         from sqlalchemy import create_engine, text
     except ImportError as exc:  # pragma: no cover - requires runtime deps
         raise RuntimeError(
-            "SQLAlchemy is required to connect to PostgreSQL. Install requirements.txt first."
+            "SQLAlchemy is required to connect to the database. Install requirements.txt first."
         ) from exc
     return create_engine, text
 
@@ -29,58 +29,93 @@ class DatabaseManager:
         self._engine = None
 
     @property
+    def _is_sqlite(self) -> bool:
+        return self.config.database_url.startswith("sqlite")
+
+    @property
     def engine(self):
         if self._engine is None:
             create_engine, _ = _require_sqlalchemy()
-            self._engine = create_engine(self.config.database_url, future=True)
+            if self._is_sqlite:
+                self._engine = create_engine(
+                    self.config.database_url,
+                    connect_args={"check_same_thread": False},
+                    future=True,
+                )
+            else:
+                self._engine = create_engine(self.config.database_url, future=True)
         return self._engine
 
     def execute_script(self, script_path: str | Path) -> None:
         sql = Path(script_path).read_text(encoding="utf-8")
         raw_connection = self.engine.raw_connection()
         try:
-            cursor = raw_connection.cursor()
-            cursor.execute(sql)
-            raw_connection.commit()
+            if self._is_sqlite:
+                raw_connection.executescript(sql)
+            else:
+                cursor = raw_connection.cursor()
+                cursor.execute(sql)
+                raw_connection.commit()
         finally:
             raw_connection.close()
 
     def execute_sql(self, sql: str) -> None:
         raw_connection = self.engine.raw_connection()
         try:
-            cursor = raw_connection.cursor()
-            cursor.execute(sql)
-            raw_connection.commit()
+            if self._is_sqlite:
+                raw_connection.executescript(sql)
+            else:
+                cursor = raw_connection.cursor()
+                cursor.execute(sql)
+                raw_connection.commit()
         finally:
             raw_connection.close()
 
-    def write_dataframe(self, table_name: str, dataframe: pd.DataFrame, if_exists: str = "append") -> None:
+    def write_dataframe(
+        self, table_name: str, dataframe: pd.DataFrame, if_exists: str = "append"
+    ) -> None:
         dataframe.to_sql(table_name, self.engine, if_exists=if_exists, index=False)
 
     def explain_query(self, sql: str, timeout_ms: int | None = None) -> list[str]:
         _, text = _require_sqlalchemy()
-        statement_timeout_ms = timeout_ms or self.config.statement_timeout_ms
         statement = sql.strip().rstrip(";")
-        explain_sql = f"EXPLAIN {statement}"
 
+        if self._is_sqlite:
+            explain_sql = f"EXPLAIN QUERY PLAN {statement}"
+            with self.engine.begin() as connection:
+                rows = connection.execute(text(explain_sql)).fetchall()
+            return [str(row) for row in rows]
+
+        statement_timeout_ms = timeout_ms or self.config.statement_timeout_ms
+        explain_sql = f"EXPLAIN {statement}"
         with self.engine.begin() as connection:
-            connection.exec_driver_sql(f"SET LOCAL statement_timeout = {statement_timeout_ms}")
+            connection.exec_driver_sql(
+                f"SET LOCAL statement_timeout = {statement_timeout_ms}"
+            )
             rows = connection.execute(text(explain_sql)).fetchall()
         return [str(row[0]) for row in rows]
 
-    def query_dataframe(self, sql: str, limit: int | None = None, timeout_ms: int | None = None) -> pd.DataFrame:
+    def query_dataframe(
+        self, sql: str, limit: int | None = None, timeout_ms: int | None = None
+    ) -> pd.DataFrame:
         _, text = _require_sqlalchemy()
-        statement_timeout_ms = timeout_ms or self.config.statement_timeout_ms
         statement = sql.strip().rstrip(";")
         if limit is not None:
             statement = f"SELECT * FROM ({statement}) AS agent_result LIMIT {limit}"
 
         with self.engine.begin() as connection:
-            connection.exec_driver_sql(f"SET LOCAL statement_timeout = {statement_timeout_ms}")
+            if not self._is_sqlite:
+                statement_timeout_ms = timeout_ms or self.config.statement_timeout_ms
+                connection.exec_driver_sql(
+                    f"SET LOCAL statement_timeout = {statement_timeout_ms}"
+                )
             return pd.read_sql_query(text(statement), connection)
 
     def get_schema_metadata(self) -> dict[str, dict[str, list[dict[str, str]]]]:
         _, text = _require_sqlalchemy()
+
+        if self._is_sqlite:
+            return self._get_sqlite_metadata(text)
 
         column_sql = """
         SELECT
@@ -144,6 +179,41 @@ class DatabaseManager:
                         "foreign_column_name": row.foreign_column_name,
                     }
                 )
+        return metadata
+
+    def _get_sqlite_metadata(self, text) -> dict[str, dict[str, list[dict[str, str]]]]:
+        metadata: dict[str, dict[str, list[dict[str, str]]]] = {}
+        with self.engine.begin() as connection:
+            table_rows = connection.execute(
+                text(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+                )
+            ).fetchall()
+            for (table_name,) in table_rows:
+                info_rows = connection.execute(
+                    text(f"PRAGMA table_info({table_name})")
+                ).fetchall()
+                fk_rows = connection.execute(
+                    text(f"PRAGMA foreign_key_list({table_name})")
+                ).fetchall()
+                metadata[table_name] = {
+                    "columns": [
+                        {
+                            "name": row[1],
+                            "data_type": row[2] or "TEXT",
+                            "is_primary_key": bool(row[5]),
+                        }
+                        for row in info_rows
+                    ],
+                    "foreign_keys": [
+                        {
+                            "column_name": row[3],
+                            "foreign_table_name": row[2],
+                            "foreign_column_name": row[4],
+                        }
+                        for row in fk_rows
+                    ],
+                }
         return metadata
 
     def save_session(

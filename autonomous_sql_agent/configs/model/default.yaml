@@ -1,0 +1,10 @@
+# Primary NL-to-SQL model
+name: defog/sqlcoder-7b-2
+
+# Fallback when primary fails to load
+fallback_name: Qwen/Qwen2.5-3B-Instruct
+
+# Generation parameters — deterministic defaults
+temperature: 0.1
+top_p: 0.9
+max_new_tokens: 512

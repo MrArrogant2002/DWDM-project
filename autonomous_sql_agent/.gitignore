@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# ML artifacts
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+mlruns/
+wandb/
+experiments/runs/
+outputs/
+multirun/
+
+# Data
+data/raw/
+data/processed/
+*.parquet
+*.arrow
+
+# Env and secrets
+.env
+.env.local
+.secrets.baseline
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Exports
+exports/
+*.csv
+*.xlsx
+*.pdf
+
+# Hydra
+.hydra/
+
+# Coverage
+.coverage
+htmlcov/

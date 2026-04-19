@@ -13,3 +13,5 @@ exports/*.csv
 exports/*.xlsx
 exports/*.pdf
 exports/*.png
+data/warehouse.db
+.claude

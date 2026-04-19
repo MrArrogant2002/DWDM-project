@@ -48,6 +48,7 @@ class AgentState:
     question: str
     session_id: str | None = None
     intent: str | None = None
+    needs_summary: bool = False
     analysis_plan: list[str] = field(default_factory=list)
     schema_context: str = ""
     glossary: dict[str, str] = field(default_factory=dict)
@@ -73,5 +74,6 @@ class AnalysisResponse:
     downloads: DownloadArtifacts
     warnings: list[str]
     follow_up_questions: list[str]
+    needs_summary: bool = False
     result_df: Any = None
     analysis_plan: list[str] = field(default_factory=list)

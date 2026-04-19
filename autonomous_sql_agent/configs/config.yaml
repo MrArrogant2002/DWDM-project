@@ -1,0 +1,31 @@
+defaults:
+  - model: default
+  - data: default
+  - optim: default
+  - experiment: baseline
+  - _self_
+
+# Global reproducibility seed — passed to seed_everything()
+seed: 42
+
+# Compute — cpu for no-GPU environments
+device: cpu
+
+# DataLoader parallelism
+num_workers: 0
+
+# Logging
+log_level: INFO
+
+# Tracking backends
+tracking:
+  csv:
+    enabled: true
+    # Hydra substitutes runtime.output_dir at run time
+    path: ${hydra:runtime.output_dir}/metrics.csv
+
+hydra:
+  run:
+    dir: experiments/runs/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: experiments/multirun/${now:%Y-%m-%d_%H-%M-%S}

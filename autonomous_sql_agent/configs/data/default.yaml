@@ -1,0 +1,14 @@
+# Root directory for processed data files
+root: data/processed
+
+# Split file paths relative to root
+train: train.parquet
+val: val.parquet
+test: test.parquet
+
+# DataLoader settings
+batch_size: 32
+
+# Row limits for warehouse queries
+preview_row_limit: 200
+export_row_limit: 50000

@@ -1,0 +1,17 @@
+# @package _global_
+# Baseline experiment — composes model/default + data/default + optim/default
+
+defaults:
+  - override /model: default
+  - override /data: default
+  - override /optim: default
+
+# Override global seed for this experiment
+seed: 42
+
+# Training loop knobs
+training:
+  max_steps: 1000
+  log_every: 50
+  eval_every: 200
+  save_every: 500

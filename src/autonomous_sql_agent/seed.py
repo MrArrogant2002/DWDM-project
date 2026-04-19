@@ -15,12 +15,48 @@ logger = get_logger(__name__)
 
 
 FIRST_NAMES = [
-    "Ava", "Liam", "Noah", "Emma", "Olivia", "Mason", "Sophia", "Isabella", "Aria", "Mia",
-    "Lucas", "Elijah", "Harper", "Amelia", "Ethan", "James", "Charlotte", "Benjamin", "Evelyn", "Henry",
+    "Ava",
+    "Liam",
+    "Noah",
+    "Emma",
+    "Olivia",
+    "Mason",
+    "Sophia",
+    "Isabella",
+    "Aria",
+    "Mia",
+    "Lucas",
+    "Elijah",
+    "Harper",
+    "Amelia",
+    "Ethan",
+    "James",
+    "Charlotte",
+    "Benjamin",
+    "Evelyn",
+    "Henry",
 ]
 LAST_NAMES = [
-    "Patel", "Smith", "Brown", "Johnson", "Garcia", "Martinez", "Lee", "Clark", "Walker", "Hall",
-    "Young", "Allen", "King", "Wright", "Scott", "Green", "Baker", "Adams", "Nelson", "Carter",
+    "Patel",
+    "Smith",
+    "Brown",
+    "Johnson",
+    "Garcia",
+    "Martinez",
+    "Lee",
+    "Clark",
+    "Walker",
+    "Hall",
+    "Young",
+    "Allen",
+    "King",
+    "Wright",
+    "Scott",
+    "Green",
+    "Baker",
+    "Adams",
+    "Nelson",
+    "Carter",
 ]
 
 
@@ -75,21 +111,35 @@ class WarehouseSeeder:
         )
 
     def _truncate_tables(self) -> None:
-        self.database.execute_sql(
-            """
-            TRUNCATE TABLE
-                fact_returns,
-                fact_order_items,
-                fact_orders,
-                dim_customer,
-                dim_product,
-                dim_channel,
-                dim_region,
-                dim_date,
-                app_analysis_sessions
-            RESTART IDENTITY CASCADE
-            """
-        )
+        if self.database._is_sqlite:
+            for table in (
+                "fact_returns",
+                "fact_order_items",
+                "fact_orders",
+                "dim_customer",
+                "dim_product",
+                "dim_channel",
+                "dim_region",
+                "dim_date",
+                "app_analysis_sessions",
+            ):
+                self.database.execute_sql(f"DELETE FROM {table}")
+        else:
+            self.database.execute_sql(
+                """
+                TRUNCATE TABLE
+                    fact_returns,
+                    fact_order_items,
+                    fact_orders,
+                    dim_customer,
+                    dim_product,
+                    dim_channel,
+                    dim_region,
+                    dim_date,
+                    app_analysis_sessions
+                RESTART IDENTITY CASCADE
+                """
+            )
 
     @staticmethod
     def _build_date_dimension(start: date, end: date) -> pd.DataFrame:
@@ -139,22 +189,42 @@ class WarehouseSeeder:
             (4, "marketplace", "desktop", "sponsored_listing"),
             (5, "social_commerce", "mobile", "influencer_drop"),
         ]
-        return pd.DataFrame(rows, columns=["channel_id", "channel_name", "device_type", "campaign_name"])
+        return pd.DataFrame(
+            rows, columns=["channel_id", "channel_name", "device_type", "campaign_name"]
+        )
 
     def _build_products(self, product_count: int, rng: random.Random) -> pd.DataFrame:
         catalog = {
             "Electronics": {
-                "subcategories": ["Headphones", "Laptop", "Smartwatch", "Tablet", "Gaming"],
+                "subcategories": [
+                    "Headphones",
+                    "Laptop",
+                    "Smartwatch",
+                    "Tablet",
+                    "Gaming",
+                ],
                 "brands": ["NovaTech", "Pulse", "Skylab", "Vertex"],
                 "price_range": (80, 1800),
             },
             "Apparel": {
-                "subcategories": ["Tops", "Bottoms", "Outerwear", "Shoes", "Athleisure"],
+                "subcategories": [
+                    "Tops",
+                    "Bottoms",
+                    "Outerwear",
+                    "Shoes",
+                    "Athleisure",
+                ],
                 "brands": ["Urban Loom", "Mistral", "Stride", "Peak"],
                 "price_range": (20, 250),
             },
             "Home": {
-                "subcategories": ["Kitchen", "Decor", "Furniture", "Storage", "Lighting"],
+                "subcategories": [
+                    "Kitchen",
+                    "Decor",
+                    "Furniture",
+                    "Storage",
+                    "Lighting",
+                ],
                 "brands": ["Hearth", "Nook", "Lumen", "Oakline"],
                 "price_range": (15, 600),
             },
@@ -187,7 +257,9 @@ class WarehouseSeeder:
             )
         return pd.DataFrame(rows)
 
-    def _build_customers(self, customer_count: int, region_df: pd.DataFrame, rng: random.Random) -> pd.DataFrame:
+    def _build_customers(
+        self, customer_count: int, region_df: pd.DataFrame, rng: random.Random
+    ) -> pd.DataFrame:
         tiers = ["bronze", "silver", "gold", "platinum"]
         segments = ["value", "core", "premium", "vip"]
         genders = ["female", "male", "non_binary"]
@@ -217,8 +289,11 @@ class WarehouseSeeder:
                     "gender": rng.choice(genders),
                     "age": age,
                     "age_band": age_band,
-                    "loyalty_tier": rng.choices(tiers, weights=[35, 32, 22, 11], k=1)[0],
-                    "signup_date": date(2022, 1, 1) + timedelta(days=rng.randint(0, 1000)),
+                    "loyalty_tier": rng.choices(tiers, weights=[35, 32, 22, 11], k=1)[
+                        0
+                    ],
+                    "signup_date": date(2022, 1, 1)
+                    + timedelta(days=rng.randint(0, 1000)),
                     "city": region["city"],
                     "region_id": region["region_id"],
                     "segment": rng.choices(segments, weights=[25, 45, 20, 10], k=1)[0],
@@ -248,7 +323,10 @@ class WarehouseSeeder:
         start_date = datetime(2023, 1, 1)
         total_days = (datetime(2025, 12, 31) - start_date).days
 
-        product_weights = [1.6 if product["category"] == "Electronics" else 1.0 for product in product_records]
+        product_weights = [
+            1.6 if product["category"] == "Electronics" else 1.0
+            for product in product_records
+        ]
 
         for order_id in range(1, total_orders + 1):
             customer = rng.choice(customer_records)
@@ -275,7 +353,10 @@ class WarehouseSeeder:
                 quantity = rng.choices([1, 2, 3], weights=[64, 27, 9], k=1)[0]
                 line_price = float(product["unit_price"]) * quantity
                 promo_boost = 0.0
-                if product["category"] == "Electronics" and order_date.month in {11, 12}:
+                if product["category"] == "Electronics" and order_date.month in {
+                    11,
+                    12,
+                }:
                     promo_boost += 0.08
                 if channel["channel_name"] == "social_commerce":
                     promo_boost += 0.05
@@ -304,14 +385,18 @@ class WarehouseSeeder:
                     return_probability += 0.01
                 if order_date.month == 1:
                     return_probability += 0.03
-                return_candidates.append((item_id, product, quantity, return_probability))
+                return_candidates.append(
+                    (item_id, product, quantity, return_probability)
+                )
                 item_id += 1
 
             adjusted_subtotal = round(subtotal * month_multiplier, 2)
             adjusted_discount = round(discount_total * month_multiplier, 2)
             tax_amount = round((adjusted_subtotal - adjusted_discount) * 0.075, 2)
             shipping_amount = round(rng.uniform(4.99, 19.99), 2)
-            total_amount = round(adjusted_subtotal - adjusted_discount + tax_amount + shipping_amount, 2)
+            total_amount = round(
+                adjusted_subtotal - adjusted_discount + tax_amount + shipping_amount, 2
+            )
 
             order_rows.append(
                 {
@@ -323,7 +408,9 @@ class WarehouseSeeder:
                     "region_id": customer["region_id"],
                     "channel_id": channel["channel_id"],
                     "order_status": order_status,
-                    "payment_method": rng.choice(["credit_card", "paypal", "gift_card", "upi"]),
+                    "payment_method": rng.choice(
+                        ["credit_card", "paypal", "gift_card", "upi"]
+                    ),
                     "shipping_days": shipping_days,
                     "subtotal": adjusted_subtotal,
                     "discount_amount": adjusted_discount,
@@ -336,14 +423,27 @@ class WarehouseSeeder:
             if order_status == "cancelled":
                 continue
 
-            for candidate_item_id, product, quantity, return_probability in return_candidates:
+            for (
+                candidate_item_id,
+                product,
+                quantity,
+                return_probability,
+            ) in return_candidates:
                 if rng.random() > return_probability:
                     continue
                 return_qty = rng.randint(1, quantity)
                 reason = rng.choice(
-                    ["damaged", "wrong_size", "late_delivery", "quality_issue", "changed_mind"]
+                    [
+                        "damaged",
+                        "wrong_size",
+                        "late_delivery",
+                        "quality_issue",
+                        "changed_mind",
+                    ]
                 )
-                return_date = min(order_date + timedelta(days=rng.randint(5, 35)), date(2025, 12, 31))
+                return_date = min(
+                    order_date + timedelta(days=rng.randint(5, 35)), date(2025, 12, 31)
+                )
                 return_rows.append(
                     {
                         "return_id": return_id,
@@ -352,8 +452,12 @@ class WarehouseSeeder:
                         "return_date_id": int(return_date.strftime("%Y%m%d")),
                         "return_reason": reason,
                         "return_quantity": return_qty,
-                        "return_amount": round(float(product["unit_price"]) * return_qty * 0.92, 2),
-                        "resolution_status": rng.choice(["refunded", "store_credit", "replacement"]),
+                        "return_amount": round(
+                            float(product["unit_price"]) * return_qty * 0.92, 2
+                        ),
+                        "resolution_status": rng.choice(
+                            ["refunded", "store_credit", "replacement"]
+                        ),
                     }
                 )
                 return_id += 1
