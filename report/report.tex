@@ -1,34 +1,19 @@
 % ============================================================
-% Autonomous SQL Agent — M.Tech Project Report
-% SRM Institute of Science and Technology
+% Autonomous SQL Agent — M.Tech Project Report (Compressed)
+% SRMAP University
 % Compile: pdflatex -> bibtex -> pdflatex -> pdflatex
-% Or upload the entire report/ folder to Overleaf.
 % ============================================================
-\documentclass[12pt,a4paper]{report}
+\documentclass[11pt,a4paper]{article}
 
 % ===== PACKAGES =====
-\usepackage[top=1in,bottom=1in,left=1.25in,right=1in]{geometry}
-\usepackage{graphicx}
-\usepackage{float}
-\usepackage{amsmath,amssymb}
-\usepackage{booktabs}
-\usepackage{longtable}
-\usepackage{array}
-\usepackage{tabularx}
-\usepackage{xcolor}
-\usepackage{listings}
+\usepackage[top=0.85in,bottom=0.85in,left=1.1in,right=1in]{geometry}
+\usepackage{graphicx,float}
+\usepackage{booktabs,tabularx,array}
+\usepackage{xcolor,listings}
 \usepackage[hidelinks]{hyperref}
-\usepackage{setspace}
-\usepackage{fancyhdr}
-\usepackage{titlesec}
-\usepackage{enumitem}
-\usepackage{multirow}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{cite}
-\usepackage{url}
+\usepackage{setspace,fancyhdr,titlesec}
+\usepackage{enumitem,caption,cite,url,microtype}
 \usepackage{parskip}
-\usepackage{microtype}
 \usepackage{tcolorbox}
 \tcbuselibrary{skins}
 
@@ -38,1167 +23,366 @@
 \definecolor{codegreen}{RGB}{0,120,0}
 \definecolor{codegray}{RGB}{120,120,120}
 \definecolor{codepurple}{RGB}{140,0,200}
-\definecolor{codebackground}{RGB}{250,250,248}
-\definecolor{warningbg}{RGB}{255,250,220}
+\definecolor{codebg}{RGB}{250,250,248}
 
-% ===== CODE LISTINGS =====
-\lstdefinestyle{pythonstyle}{
-    language=Python,
-    backgroundcolor=\color{codebackground},
-    commentstyle=\color{codegreen},
+% ===== CODE STYLE =====
+\lstdefinestyle{sql}{
+    language=SQL, backgroundcolor=\color{codebg},
     keywordstyle=\color{blue}\bfseries,
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
     basicstyle=\ttfamily\footnotesize,
-    breaklines=true,
-    captionpos=b,
-    numbers=left,
-    numbersep=5pt,
-    tabsize=4,
-    showstringspaces=false,
-    frame=single,
-    rulecolor=\color{gray!40},
-    xleftmargin=1em
+    breaklines=true, frame=single,
+    rulecolor=\color{gray!35}, numbers=none
 }
-\lstdefinestyle{sqlstyle}{
-    language=SQL,
-    backgroundcolor=\color{codebackground},
-    keywordstyle=\color{blue}\bfseries,
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
-    basicstyle=\ttfamily\footnotesize,
-    breaklines=true,
-    captionpos=b,
-    numbers=left,
-    numbersep=5pt,
-    tabsize=2,
-    showstringspaces=false,
-    frame=single,
-    rulecolor=\color{gray!40},
-    xleftmargin=1em
-}
-\lstset{style=pythonstyle}
+\lstset{style=sql}
 
 % ===== HYPERREF =====
-\hypersetup{
-    colorlinks=true,
-    linkcolor=srmblue,
-    urlcolor=cyan,
-    citecolor=srmblue,
-    pdftitle={Autonomous SQL Agent for Natural Language Analytics over Data Warehouses},
-    pdfauthor={Rapolu Eswara Balu, Alapati Venkata Rayudu}
-}
+\hypersetup{colorlinks=true,linkcolor=srmblue,urlcolor=cyan,citecolor=srmblue,
+  pdftitle={An Autonomous SQL Agent for Data Warehouse Analytics},
+  pdfauthor={Rapolu Eswara Balu, Alapati Venkata Rayudu}}
 
 % ===== SPACING =====
-\setstretch{1.5}
+\setstretch{1.18}
+\setlength{\parskip}{4pt plus 2pt}
+\setlength{\parindent}{0pt}
+
+% ===== SECTION STYLE =====
+\titleformat{\section}{\large\bfseries\color{srmblue}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{9pt plus 2pt}{3pt plus 1pt}
+\titlespacing*{\subsection}{0pt}{5pt plus 1pt}{2pt plus 1pt}
 
 % ===== PAGE STYLE =====
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\textit{Autonomous SQL Agent}}
-\fancyhead[R]{\small\textit{\leftmark}}
-\fancyfoot[C]{\thepage}
+\fancyhead[L]{\small\textit{Autonomous SQL Agent for Data Warehouse Analytics}}
+\fancyhead[R]{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
-\setlength{\headheight}{15pt}
+\setlength{\headheight}{13.6pt}
 
-% ===== CHAPTER TITLE STYLE =====
-\titleformat{\chapter}[display]
-    {\normalfont\huge\bfseries\color{srmblue}}
-    {\chaptertitlename\ \thechapter}{20pt}{\Huge}
-
-% ===== HELPER: image placeholder =====
-% Usage: \imgplaceholder{height}{width}{caption text}
-\newcommand{\imgplaceholder}[3]{%
-  \fbox{\parbox[c][#1][c]{#2}{\centering\textbf{Image Placeholder}\\[4pt]\small #3}}%
-}
+% ===== CAPTION STYLE =====
+\captionsetup{font=small,labelfont=bf,skip=4pt}
 
 % ============================================================
 \begin{document}
 % ============================================================
 
-\pagenumbering{roman}
-
-%% ============================================================
-%%  TITLE PAGE
-%% ============================================================
-\begin{titlepage}
-\centering
-
-\vspace*{0.6cm}
-
-% ----- University Logo -----
-% TODO(diagram): Replace the placeholder below with the actual SRM logo.
-% Example: \includegraphics[width=0.32\textwidth]{srm_logo.png}
-\imgplaceholder{3.2cm}{6.5cm}{Place \texttt{srm\_logo.png} here}
-
-\vspace{0.7cm}
-{\LARGE\bfseries\color{srmblue}SRM Institute of Science and Technology}\\[0.2cm]
-{\normalsize Kattankulathur, Chennai -- 603203, Tamil Nadu, India}\\[0.25cm]
-{\large\bfseries Department of Artificial Intelligence and Machine Learning}\\[0.2cm]
-{\normalsize M.Tech in Artificial Intelligence and Machine Learning}\\[0.8cm]
-
-\noindent\rule{0.88\linewidth}{1.5pt}\\[0.45cm]
-{\LARGE\bfseries Autonomous SQL Agent for Natural Language\\[0.25cm]
-Analytics over Data Warehouses}\\[0.45cm]
-\noindent\rule{0.88\linewidth}{1.5pt}\\[0.6cm]
-
-{\large A Project Report Submitted in Partial Fulfillment of the\\
-Requirements for the Course}\\[0.3cm]
-{\large\bfseries Data Warehousing and Data Mining}\\[1cm]
-
-\begin{minipage}[t]{0.48\textwidth}
-\flushleft
-{\large\bfseries Submitted by:}\\[0.5cm]
-\begin{tabular}{@{}ll}
-\toprule
-\textbf{Name} & \textbf{Roll Number}\\
-\midrule
-Rapolu Eswara Balu   & AP25122040002\\
-Alapati Venkata Rayudu & AP25122040029\\
-\bottomrule
-\end{tabular}
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.44\textwidth}
-\flushright
-{\large\bfseries Project Guide:}\\[0.4cm]
-{\bfseries Sourav Kumar Purohit}\\
-Faculty, Dept.\ of AI \& ML\\
-SRM IST, Kattankulathur
-\end{minipage}
-
-\vfill
-{\normalsize SRM Institute of Science and Technology, Kattankulathur, Chennai}
-\end{titlepage}
-
-%% ============================================================
-%%  CERTIFICATE
-%% ============================================================
-\chapter*{Certificate}
-\addcontentsline{toc}{chapter}{Certificate}
-\thispagestyle{plain}
-
+% ─── TITLE BLOCK ───────────────────────────────────────────
 \begin{center}
-{\Large\bfseries\color{srmblue}SRM Institute of Science and Technology}\\[0.2cm]
-{\normalsize Kattankulathur, Chennai -- 603203, Tamil Nadu, India}\\[0.2cm]
-{\normalsize Department of Artificial Intelligence and Machine Learning}\\[1cm]
-{\Large\bfseries Certificate}
+\vspace*{-0.3cm}
+\includegraphics[width=0.20\textwidth]{SRMAP-Logo-Main.png}\\[0.35cm]
+{\LARGE\bfseries An Autonomous SQL Agent for Data Warehouse\\[0.15cm]
+Analytics and Pattern Discovery}\\[0.25cm]
+\rule{0.88\linewidth}{1pt}\\[0.2cm]
+{\normalsize
+\textbf{Rapolu Eswara Balu}\,(AP25122040002)\quad
+\textbf{Alapati Venkata Rayudu}\,(AP25122040029)\\[0.15cm]
+\begin{tabular}{r@{~}l}
+  Guide:  & \textbf{Sourav Kumar Purohit}\\[2pt]
+  Dept.:  & AI \& ML, SRMAP University, Amaravathi, Andhra Pradesh\\[2pt]
+  Course: & \textit{Data Warehousing and Data Mining}
+\end{tabular}}\\[0.2cm]
+\rule{0.88\linewidth}{1pt}
 \end{center}
 
-\vspace{0.5cm}
-\noindent This is to certify that the project report titled \textbf{``Autonomous SQL Agent for Natural Language Analytics over Data Warehouses''} has been submitted by \textbf{Rapolu Eswara Balu} (Roll No.\ AP25122040002) and \textbf{Alapati Venkata Rayudu} (Roll No.\ AP25122040029), students of M.Tech Artificial Intelligence and Machine Learning at SRM Institute of Science and Technology, Kattankulathur, in partial fulfillment of the requirements for the course \textbf{Data Warehousing and Data Mining}. This work has been carried out under my supervision and guidance.
+\vspace{0.15cm}
 
-\vspace{2.5cm}
-\begin{minipage}[t]{0.45\textwidth}
-\centering
-\rule{5cm}{0.5pt}\\[0.2cm]
-{\bfseries Sourav Kumar Purohit}\\
-Project Guide\\
-Department of AI \& ML\\
-SRM Institute of Science and Technology
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.45\textwidth}
-\centering
-\rule{5cm}{0.5pt}\\[0.2cm]
-{\bfseries Head of Department}\\
-Department of AI \& ML\\
-SRM Institute of Science and Technology
-\end{minipage}
+% ─── ABSTRACT ──────────────────────────────────────────────
+\begin{tcolorbox}[colback=srmlightblue,colframe=srmblue,
+  title=\textbf{Abstract},fonttitle=\small\bfseries,
+  fontupper=\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+This paper presents an \textbf{Autonomous SQL Agent} — an AI system that allows users to ask
+business questions in plain English and automatically get the answer from a data warehouse,
+without writing any SQL. The system uses eight AI agents working together: one to understand
+the question, one to plan the analysis, one to look up the database structure, one to write
+the SQL query (using the Qwen2.5-Coder-7B language model), one to check it is safe, one to
+run it, one to find patterns in the results, and one to explain the findings. A backup
+generator handles queries when the internet is unavailable. All 22 automated tests pass.
+The system runs as a Streamlit web application and shows that AI agents can help
+non-technical users query a data warehouse safely and reliably.
 
-\vspace{1.5cm}
-\noindent\textbf{Place:}~Kattankulathur, Chennai \hspace{1cm}
-\textbf{Date:}~\underline{\hspace{4.5cm}}
-
-%% ============================================================
-%%  DECLARATION
-%% ============================================================
-\chapter*{Declaration}
-\addcontentsline{toc}{chapter}{Declaration}
-\thispagestyle{plain}
-
-\noindent We, \textbf{Rapolu Eswara Balu} (AP25122040002) and \textbf{Alapati Venkata Rayudu} (AP25122040029), students of M.Tech Artificial Intelligence and Machine Learning at SRM Institute of Science and Technology, hereby declare that the project report titled \textbf{``Autonomous SQL Agent for Natural Language Analytics over Data Warehouses''} submitted in partial fulfillment of the requirements for the course Data Warehousing and Data Mining is our original work carried out under the guidance of \textbf{Sourav Kumar Purohit}.
-
-\noindent The work presented in this report has not been submitted elsewhere, in whole or in part, for the award of any other degree or diploma. All sources of information used in this report have been duly cited and acknowledged in the bibliography.
-
-\vspace{2.5cm}
-\begin{minipage}[t]{0.45\textwidth}
-\flushleft
-\rule{5.5cm}{0.5pt}\\[0.2cm]
-{\bfseries Rapolu Eswara Balu}\\
-AP25122040002
-\end{minipage}
-\hfill
-\begin{minipage}[t]{0.45\textwidth}
-\flushleft
-\rule{5.5cm}{0.5pt}\\[0.2cm]
-{\bfseries Alapati Venkata Rayudu}\\
-AP25122040029
-\end{minipage}
-
-\vspace{1.2cm}
-\noindent\textbf{Place:}~Kattankulathur, Chennai \hspace{1cm}
-\textbf{Date:}~\underline{\hspace{4.5cm}}
-
-%% ============================================================
-%%  ABSTRACT
-%% ============================================================
-\chapter*{Abstract}
-\addcontentsline{toc}{chapter}{Abstract}
-\thispagestyle{plain}
-
-\noindent Natural language interfaces to relational databases remain a significant challenge at the intersection of natural language processing and data management. Business analysts frequently need to query large data warehouses without possessing SQL expertise, creating a bottleneck that limits data-driven decision making at scale. This project presents an \textbf{Autonomous SQL Agent} --- a multi-agent AI system that accepts natural-language business questions and autonomously generates, validates, and executes warehouse-safe SQL queries against a retail star-schema data warehouse, subsequently discovering statistical patterns and exporting results in multiple formats.
-
-\noindent The system employs a sequential eight-agent pipeline: an intent classifier, a planning agent, a schema context agent, a SQL generation agent backed by the Qwen/Qwen2.5-Coder-7B-Instruct large language model via the HuggingFace Inference API, a multi-layer SQL validation agent, an execution agent, a pattern discovery agent, and a report generation agent. A rule-based fallback SQL generator ensures 100\% system availability even when the language model API is unreachable.
-
-\noindent The system supports two data modes: a built-in retail star schema seeded with over 100,000 synthetic orders, and a user-driven CSV upload mode that automatically constructs a normalized star schema from arbitrary flat files. Multi-layer SQL safety enforcement rejects all data-manipulation language, multi-statement payloads, and dangerous database functions before query execution. Results are exported as CSV, Microsoft Excel (XLSX), and PDF reports with embedded interactive chart images. The system is deployed as an interactive Streamlit web application requiring no SQL knowledge from the end user.
-
-\vspace{0.4cm}
-\noindent\textbf{Keywords:}~Natural Language to SQL, Agentic AI, Data Warehouse, Large Language Models, Star Schema, Text Analytics, HuggingFace, Streamlit, sqlglot, Dimensional Modeling
-
-%% ============================================================
-%%  ACKNOWLEDGEMENTS
-%% ============================================================
-\chapter*{Acknowledgements}
-\addcontentsline{toc}{chapter}{Acknowledgements}
-\thispagestyle{plain}
-
-\noindent The authors express sincere gratitude to \textbf{Sourav Kumar Purohit}, Faculty, Department of Artificial Intelligence and Machine Learning, SRM Institute of Science and Technology, for his invaluable guidance, constructive feedback, and continuous encouragement throughout the conceptualization, development, and documentation of this project.
-
-\noindent The authors also acknowledge the Department of Artificial Intelligence and Machine Learning at SRM Institute of Science and Technology for providing the academic environment and computational resources that made this work possible.
-
-\noindent The authors are grateful to the open-source community whose tools underpin this system --- including the HuggingFace Transformers ecosystem, the Streamlit framework, the sqlglot SQL parsing library, and the Plotly visualization library --- without which this project would not have been feasible within the academic timeline.
-
-\vspace{2cm}
-\begin{flushright}
-{\bfseries Rapolu Eswara Balu}\\
-{\bfseries Alapati Venkata Rayudu}
-\end{flushright}
-
-%% ============================================================
-%%  TABLE OF CONTENTS / LISTS
-%% ============================================================
-\tableofcontents
-\listoffigures
-\addcontentsline{toc}{chapter}{List of Figures}
-\listoftables
-\addcontentsline{toc}{chapter}{List of Tables}
-
-\pagenumbering{arabic}
-
-%% ============================================================
-%%  CHAPTER 1 — INTRODUCTION
-%% ============================================================
-\chapter{Introduction}
-\label{chap:introduction}
-
-\section{Background and Motivation}
-
-The proliferation of data warehouses in enterprise environments has created an ever-widening gap between the volume of stored analytical data and the number of personnel capable of querying it. Structured Query Language (SQL), while expressive and standardized, presents a non-trivial learning barrier for domain experts --- marketing analysts, supply-chain managers, and financial planners --- who possess deep business knowledge but lack the technical training to author complex multi-join aggregation queries against star-schema databases.
-
-Recent advances in large language models (LLMs) have demonstrated remarkable capability in code synthesis tasks, including the generation of SQL from natural-language specifications \cite{brown2020gpt3,zhong2017seq2sql}. Simultaneously, the emergence of multi-agent AI architectures has provided a compositional framework in which specialized agents collaboratively decompose complex tasks, validate intermediate outputs, and recover from failures \cite{yao2022react}. The convergence of these two trends makes it tractable to construct systems where a business user may pose an analytical question in plain English and receive a validated, executed result without writing a single line of SQL.
-
-This project, developed as part of the Data Warehousing and Data Mining course at SRM Institute of Science and Technology, implements precisely such a system: an \textit{Autonomous SQL Agent} that integrates a multi-agent pipeline with a retail star-schema data warehouse and an interactive web interface, enabling natural-language analytics for non-technical users.
-
-\section{Problem Statement}
-
-The central problem addressed in this project may be formally stated as follows:
-
-\begin{tcolorbox}[colback=srmlightblue,colframe=srmblue,title=Problem Statement]
-Given a natural-language analytical question and a relational data warehouse schema, automatically generate a syntactically correct, semantically accurate, and execution-safe SQL query; execute it against the warehouse; discover statistical patterns in the result; and present findings with visualizations and downloadable exports --- without requiring the end user to possess any SQL knowledge.
+\smallskip
+\textbf{Keywords:} Natural Language to SQL, AI Agents, Data Warehouse, LLM, Star Schema, Streamlit
 \end{tcolorbox}
 
-\vspace{0.4cm}
-\noindent Several distinct sub-problems must be solved end-to-end:
+% ─── 1. INTRODUCTION ───────────────────────────────────────
+\section{Introduction}
 
-\begin{enumerate}[label=(\roman*)]
-    \item \textbf{Intent understanding}: Classifying the user's question into analytical categories (trend, anomaly, segmentation, comparison, or summary) to guide subsequent query construction.
-    \item \textbf{Schema grounding}: Identifying the relevant tables and columns from a multi-table star schema for the given question, including synonym resolution (e.g., ``revenue'' $\rightarrow$ \texttt{total\_amount}).
-    \item \textbf{SQL generation}: Producing syntactically correct SQLite-dialect SQL including appropriate JOINs, aggregations, GROUP BY clauses, and ORDER BY directives.
-    \item \textbf{Safety enforcement}: Preventing any data-mutating, privilege-escalating, or destructive SQL from reaching the database engine.
-    \item \textbf{Pattern discovery}: Extracting actionable insights (trends, anomalies, cluster hints) from query result DataFrames using statistical methods.
-    \item \textbf{Flexible data ingestion}: Allowing users to supply arbitrary CSV flat files and automatically constructing a queryable normalized star schema from them.
+Business analysts, managers, and planners need data from company databases every day, but
+most of them do not know SQL — the language used to query databases. Writing SQL for a large
+data warehouse with many linked tables is especially difficult. Modern AI language models
+(LLMs) can now write accurate SQL from a plain English description~\cite{brown2020gpt3}, and
+multi-agent AI systems can break a complex task into smaller, manageable
+steps~\cite{yao2022react}. This project combines both ideas to let any user simply type a
+question and receive a correct, safe answer without touching SQL at all.
+
+\begin{tcolorbox}[colback=srmlightblue,colframe=srmblue,
+  fontupper=\small,top=3pt,bottom=3pt,left=6pt,right=6pt]
+\textbf{Problem Statement.}~Given a question asked in plain English and a database schema,
+automatically write the correct SQL query, run it safely, find useful patterns in the
+results, and show the findings with charts and downloadable files —
+\textit{without requiring any SQL knowledge from the user.}
+\end{tcolorbox}
+
+\smallskip
+\textbf{Key contributions:}
+\begin{enumerate}[leftmargin=1.5em,itemsep=0pt,topsep=2pt]
+\item An eight-agent pipeline that converts a plain English question into SQL, with a
+      smart retry mechanism (up to 2 attempts) that sends the error details back to the AI
+      when the first attempt fails. A backup rule-based generator works without internet.
+\item Three safety checks on every generated SQL query: a keyword filter, a code structure
+      check, and a dry-run test — ensuring no harmful query ever reaches the database.
+\item An automatic CSV upload feature that reads any spreadsheet and builds a proper
+      database structure from it, detecting column types by their names and value counts.
+\item Results exported in three formats: plain CSV, Excel with two sheets, and a PDF
+      report with an embedded chart image.
 \end{enumerate}
 
-\section{Objectives}
+% ─── 2. SYSTEM ARCHITECTURE ────────────────────────────────
+\section{System Architecture}
 
-The primary objectives of this project are:
-
-\begin{itemize}
-    \item Design and implement a multi-agent AI pipeline for end-to-end natural-language analytics over a relational data warehouse.
-    \item Construct a synthetic retail star-schema data warehouse comprising five dimension tables and three fact tables, seeded with over 100,000 synthetic order records.
-    \item Integrate the Qwen/Qwen2.5-Coder-7B-Instruct large language model via the HuggingFace Inference API for SQL code generation from natural-language prompts.
-    \item Implement a rule-based SQL fallback generator ensuring system availability when the LLM API is unavailable.
-    \item Enforce multi-layer SQL security validation using keyword scanning, sqlglot AST parsing, and EXPLAIN-plan verification.
-    \item Build an automated CSV ingestion pipeline that derives a normalized star schema from arbitrary uploaded flat files.
-    \item Provide statistical analytics capabilities including z-score anomaly detection, directional trend quantification, and clustering hints.
-    \item Export query results in three formats: CSV, Microsoft Excel (XLSX), and PDF with embedded chart images.
-    \item Deploy the complete system as an interactive Streamlit web application.
-\end{itemize}
-
-\section{Scope and Limitations}
-
-The system is designed as a single-user academic prototype demonstrating the viability of agentic NL-to-SQL architectures within the constraints of an M.Tech course project. Within this scope:
-
-\begin{itemize}
-    \item \textbf{In scope}: SELECT-only analytics, SQLite and PostgreSQL compatibility, single active dataset per session, English-language questions.
-    \item \textbf{Out of scope}: User authentication, multi-user concurrency, real-time streaming data, non-English queries, write operations (INSERT / UPDATE / DELETE), production-grade scalability.
-\end{itemize}
-
-The LLM component (Qwen2.5-Coder-7B-Instruct) operates via a remote HuggingFace Inference API, requiring an internet connection and a valid API token for the primary generation path. The deterministic fallback generator provides uninterrupted coverage when the API is unavailable.
-
-\section{Key Contributions}
-
-The key contributions of this project are:
-
-\begin{enumerate}
-    \item An end-to-end multi-agent NL-to-SQL system integrating intent classification, schema grounding, LLM-driven SQL generation, multi-layer validation, statistical pattern discovery, and multi-format export.
-    \item A schema-aware error feedback loop that passes validation and execution errors back to the generation agent with annotated table and column enumerations, enabling targeted retry.
-    \item An automated CSV-to-star-schema ingestor that classifies column roles (measure, dimension, date, identifier) using name heuristics and cardinality thresholds, constructing a queryable normalized schema without user intervention.
-    \item A portable, offline-capable deployment achievable through a deterministic rule-based SQL fallback generator covering the five most common analytical query patterns.
-\end{enumerate}
-
-\section{Report Organization}
-
-The remainder of this report is organized as follows. Chapter~\ref{chap:literature} reviews related work in NL-to-SQL, agentic AI architectures, and data warehousing. Chapter~\ref{chap:architecture} describes the overall system architecture and agent pipeline. Chapter~\ref{chap:design} details the database schema and module-level design. Chapter~\ref{chap:implementation} documents the implementation of each component. Chapter~\ref{chap:testing} presents the testing strategy and results. Chapter~\ref{chap:results} presents experimental results and observations. Chapter~\ref{chap:conclusion} concludes the report and outlines future work directions.
-
-%% ============================================================
-%%  CHAPTER 2 — LITERATURE REVIEW
-%% ============================================================
-\chapter{Literature Review}
-\label{chap:literature}
-
-\section{Natural Language to SQL}
-
-The problem of translating natural-language questions into SQL queries (referred to as NL-to-SQL or Text-to-SQL) has a long research history. Early systems relied on grammar-based parsing and hand-crafted templates that could handle only restricted question forms over pre-defined schemas.
-
-The introduction of deep learning led to neural sequence-to-sequence approaches. Zhong et al.\ \cite{zhong2017seq2sql} proposed \textit{Seq2SQL}, a recurrent neural network trained on crowdsourced NL-SQL pairs with a reinforcement learning component, demonstrating that neural models could outperform grammar-based systems on the WikiSQL benchmark. However, WikiSQL was limited to single-table queries, understating the difficulty of realistic warehouse workloads.
-
-Yu et al.\ \cite{yu2018spider} addressed this gap by introducing the Spider benchmark --- a cross-domain NL-to-SQL dataset comprising 200 databases and 10,181 question-SQL pairs, with queries requiring complex multi-table joins, nested subqueries, and set operations. Spider quickly became the standard evaluation benchmark for NL-to-SQL research. Subsequent neural systems --- including IRNet \cite{guo2019irnet}, which introduced an intermediate SQL representation to handle schema-linking; PICARD \cite{scholak2021picard}, which applied constrained autoregressive decoding to guarantee SQL syntactic validity; and BRIDGE \cite{lin2020bridging}, which improved schema linking through bi-directional attention --- achieved progressive accuracy improvements on Spider.
-
-The emergence of instruction-tuned LLMs such as GPT-3 \cite{brown2020gpt3} and Codex \cite{chen2021codex} shifted the paradigm toward few-shot and zero-shot SQL generation, eliminating the need for task-specific training data. Models such as Qwen2.5-Coder \cite{hui2024qwen25coder}, trained on 5.5 trillion tokens including extensive SQL corpora, achieve competitive performance on HumanEval and SQL benchmarks, making them well-suited as the generation backbone in this system.
-
-\section{Agentic AI Systems}
-
-Agentic AI refers to systems in which one or more LLM-backed agents autonomously plan, execute, and verify multi-step tasks with access to external tools. Yao et al.\ \cite{yao2022react} introduced \textit{ReAct} --- a prompting framework that interleaves reasoning traces with action steps, allowing agents to query external tools and update their plan based on observations. ReAct demonstrated that explicit reasoning about tool use substantially improves task completion on knowledge retrieval and decision-making benchmarks.
-
-The LangChain framework \cite{chase2022langchain} popularized the ``chain'' abstraction for composing LLM calls with tool use, enabling rapid construction of multi-step AI pipelines with memory management, tool routing, and agent orchestration. Subsequent frameworks --- AutoGPT, CrewAI, and LlamaIndex Agents --- extended the concept to multi-agent collaboration with role assignment, inter-agent message passing, and long-term memory.
-
-The present system adopts a sequential multi-agent design inspired by these frameworks but implemented directly in Python without external agent libraries, giving precise control over the retry loop, error propagation, schema-context injection, and fallback behavior --- critical properties for a safe analytical system.
-
-\section{Data Warehousing and Dimensional Modeling}
-
-A data warehouse is defined by Inmon \cite{inmon2005building} as an integrated, subject-oriented, non-volatile, and time-variant collection of data supporting management decision making. The \textit{star schema} --- formalized by Kimball and Ross \cite{kimball2013toolkit} --- organizes a data warehouse into a central fact table of numeric measurements surrounded by dimension tables representing descriptive business entities. Star schemas are widely adopted in business intelligence platforms due to their query performance characteristics and conceptual simplicity.
-
-The built-in warehouse in this project closely follows Kimball's dimensional modeling guidelines, implementing a retail star schema with five dimension tables (customers, products, regions, channels, dates) and three fact tables (orders, order items, returns).
-
-\section{LLMs for Structured Data Reasoning}
-
-Rajkumar et al.\ \cite{rajkumar2022evaluating} conducted a systematic evaluation of LLMs on NL-to-SQL tasks, finding that models instruction-tuned on code corpora consistently outperform general-purpose instruction-tuned models. The evaluation highlighted the importance of schema representation in the prompt (column names, data types, sample values) for grounding generation to the target database.
-
-The Qwen2.5-Coder model family \cite{hui2024qwen25coder} achieves state-of-the-art performance on HumanEval, MBPP, and SQL-specific benchmarks, attributed to large-scale pre-training on curated code corpora including SQL, alongside instruction fine-tuning on a diverse set of coding tasks.
-
-\section{SQL Injection and LLM Security}
-
-The risk of prompt injection in LLM-driven database systems has been documented by Greshake et al.\ \cite{greshake2023notwhatchatgpt}, who demonstrated that adversarially crafted inputs could cause LLM-integrated applications to execute unintended or destructive actions. In a naive NL-to-SQL system, a question such as \textit{``List users; DROP TABLE users; --''} could result in destructive SQL execution.
-
-The present system addresses this threat through a three-layer validation strategy (detailed in Section~\ref{sec:validation}): a DML/DDL keyword blocklist, sqlglot AST-based SELECT-only enforcement, and EXPLAIN-plan pre-execution verification.
-
-\section{Summary}
-
-The reviewed literature reveals three key findings relevant to this project: (i) neural NL-to-SQL systems have matured substantially but still benefit from schema-aware grounding and error-feedback loops; (ii) multi-agent architectures with explicit reasoning steps provide a natural decomposition for complex analytical workflows; and (iii) SQL safety enforcement is a critical but often overlooked component in LLM-database integration. The system designed in this project addresses all three dimensions within a cohesive, deployable prototype.
-
-%% ============================================================
-%%  CHAPTER 3 — SYSTEM ARCHITECTURE
-%% ============================================================
-\chapter{System Architecture}
-\label{chap:architecture}
-
-\section{Architectural Overview}
-
-The Autonomous SQL Agent is organized as a four-tier layered system, as illustrated in Figure~\ref{fig:arch_overview}:
-
-\begin{enumerate}
-    \item \textbf{Presentation Tier}: A Streamlit web application providing the user interface for data upload, question input, result visualization, and export download.
-    \item \textbf{Orchestration Tier}: The \texttt{AnalysisOrchestrator} class that coordinates all agents, manages the shared \texttt{AgentState}, and implements the retry loop with fallback.
-    \item \textbf{Agent Tier}: Eight specialized agents, each responsible for a discrete and independently testable step in the pipeline.
-    \item \textbf{Infrastructure Tier}: Stateless service classes --- DatabaseManager, SchemaMetadataService, HuggingFaceSQLGenerator, ChartService, AnalyticsService, and ExportService --- that perform IO-bound or compute-bound operations on behalf of agents.
-\end{enumerate}
+The system is built in four layers, shown in Figure~\ref{fig:arch}.
+\textbf{Layer 1} is the Streamlit web interface where users upload files, type questions,
+and download results.
+\textbf{Layer 2} is the Orchestrator — the central controller that runs all agents in order,
+keeps track of shared information, and handles retries.
+\textbf{Layer 3} contains the eight AI agents that each do one job in the pipeline.
+\textbf{Layer 4} holds the shared service modules: the database connection, schema reader,
+SQL generator, chart builder, analytics engine, and export handler.
 
 \begin{figure}[H]
 \centering
-% TODO(diagram): Four-tier horizontal block diagram.
-% Tier 1 (top): Streamlit UI box split into: CSV Upload | Question Input | Results+Chart | Downloads
-% Tier 2: AnalysisOrchestrator (wide box) with AgentState labeled as side-channel
-% Tier 3: 8 agent boxes in left-to-right order: IntentAgent → PlanningAgent → SchemaAgent →
-%          SQLGenerationAgent → SQLValidationAgent → ExecutionAgent → PatternDiscoveryAgent → ReportAgent
-% Tier 4 (bottom): 6 service boxes: DatabaseManager | SchemaMetadataService | HuggingFaceSQLGenerator |
-%          ChartService | AnalyticsService | ExportService
-% Vertical arrows connect tiers. Color each tier differently (e.g., blue, teal, green, gray).
-\imgplaceholder{8cm}{13cm}{%
-Four-tier architecture diagram:\\
-Tier 1: Streamlit UI \textbar{} Tier 2: Orchestrator \textbar{}
-Tier 3: 8 Agent pipeline \textbar{} Tier 4: Infrastructure services}
-\caption{Four-tier system architecture of the Autonomous SQL Agent.}
-\label{fig:arch_overview}
+\includegraphics[width=0.95\textwidth]{figs/diagram-1.png}
+\caption{Four-layer system architecture. Layer~1: web UI. Layer~2: Orchestrator.
+Layer~3: eight-agent pipeline. Layer~4: shared service modules.}
+\label{fig:arch}
 \end{figure}
 
-\section{Agent Pipeline}
-\label{sec:pipeline}
+\textbf{Two ways to load data.}
+(1)~\textit{Built-in warehouse}: a ready-to-use retail database (described in
+Section~\ref{sec:db}) that works straight away.
+(2)~\textit{CSV upload}: the user uploads any spreadsheet; the system automatically builds
+a proper database from it and limits all queries to that data.
 
-The core of the system is an eight-stage sequential agent pipeline. Each agent receives the shared \texttt{AgentState} object, augments it with its output, and passes control to the next agent. Table~\ref{tab:agents} summarizes the agents, and Figure~\ref{fig:pipeline} illustrates the pipeline including the retry loop.
+\textbf{Two SQL generation modes.}
+(1)~\textit{AI mode}: uses the Qwen2.5-Coder-7B language model via the HuggingFace API
+when an internet connection and API key are available.
+(2)~\textit{Offline mode}: a simpler rule-based generator runs automatically when the AI
+service is unavailable, covering the five most common query types.
+
+% ─── 3. AGENT PIPELINE ─────────────────────────────────────
+\section{Agent Pipeline}
+
+Table~\ref{tab:agents} describes each of the eight agents. Figure~\ref{fig:pipeline} shows
+the full flow, including what happens when a query fails and needs to be retried.
 
 \begin{table}[H]
-\centering
-\caption{Agent pipeline: stages, agents, and responsibilities.}
+\centering\small
+\caption{Eight-agent pipeline: each agent and its job.}
 \label{tab:agents}
 \begin{tabularx}{\textwidth}{@{}clX@{}}
 \toprule
-\textbf{Stage} & \textbf{Agent} & \textbf{Responsibility} \\
+\textbf{\#} & \textbf{Agent} & \textbf{What it does} \\
 \midrule
-1 & IntentAgent          & Classifies question into: \texttt{anomaly | trend | segmentation | comparison | summary} using keyword pattern matching \\
-2 & PlanningAgent        & Generates a 4-step structured analysis plan guiding the SQL and discovery stages \\
-3 & SchemaAgent          & Loads schema context (tables, columns, types) and column glossary (business terms $\to$ physical names) into state \\
-4 & SQLGenerationAgent   & Produces a SQL candidate via the HuggingFace LLM API, or rule-based fallback when unavailable \\
-5 & SQLValidationAgent   & Validates SQL for safety (keyword blocklist, AST parse) and syntactic correctness (sqlglot) \\
-6 & ExecutionAgent       & Runs EXPLAIN on validated SQL, then executes and returns a pandas DataFrame \\
-7 & PatternDiscoveryAgent & Detects z-score anomalies and trends; infers chart type; generates follow-up question suggestions \\
-8 & ReportAgent          & Generates a plain-English summary if \texttt{needs\_summary=True} in the request \\
+1 & IntentAgent           & Decides the question type: anomaly / trend / segmentation / comparison / summary \\
+2 & PlanningAgent         & Creates a 4-step plan for how to answer the question \\
+3 & SchemaAgent           & Looks up the database tables and column names relevant to the question \\
+4 & SQLGenerationAgent    & Writes the SQL query using the AI model or the offline backup generator \\
+5 & SQLValidationAgent    & Checks the SQL is safe and correctly written before running it \\
+6 & ExecutionAgent        & Runs the query against the database and returns the results as a table \\
+7 & PatternDiscoveryAgent & Looks for unusual values, trends over time, and decides which chart to show \\
+8 & ReportAgent           & Writes a short plain-English summary of the findings \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \begin{figure}[H]
 \centering
-% TODO(diagram): Vertical swimlane flowchart showing the 8-agent pipeline.
-% Each agent is a rounded rectangle. Arrows flow downward through all 8 stages.
-% After ExecutionAgent: a diamond decision node "Success?"
-%   → Yes: continue to PatternDiscoveryAgent
-%   → No: arrow labeled "error feedback (attempt ≤ MAX_RETRIES)" loops back to SQLGenerationAgent
-%          (include a counter label showing "attempt 1" and "attempt 2")
-%   → After MAX_RETRIES exhausted: arrow to "Rule-based Fallback" box, then continues to ExecutionAgent again
-% Show AgentState as a dashed vertical bar running alongside all 8 agent boxes (shared state).
-\imgplaceholder{11cm}{13cm}{%
-8-agent pipeline flowchart with error-feedback retry loop.\\
-Show retry from ExecutionAgent back to SQLGenerationAgent (2 attempts),\\
-then fallback to rule-based SQL generator.\\
-AgentState shown as shared side-channel.}
-\caption{The eight-stage agent pipeline with error-feedback retry loop and rule-based fallback.}
+\includegraphics[width=0.62\textwidth]{figs/diagram-2.png}
+\caption{Agent pipeline flow. If the SQL query fails validation or execution, the error
+message is sent back to the SQL agent and it tries again (up to 2 times). If both
+attempts fail, the offline backup generator is used instead.}
 \label{fig:pipeline}
 \end{figure}
 
-\section{Retry and Fallback Mechanism}
-
-A critical design feature is the error-feedback retry loop within the SQL generation stage. If the \texttt{SQLValidationAgent} or \texttt{ExecutionAgent} returns an error, the orchestrator reconstructs the generation prompt with:
-
-\begin{itemize}
-    \item The original natural-language question augmented with the specific error message received.
-    \item An explicit enumeration of all valid table names present in the active schema.
-    \item A complete listing of all columns in each fact table, enabling the model to correct column-name errors.
-    \item A directive to use only the exact names listed, discouraging hallucinated identifiers.
-\end{itemize}
-
-This error-augmented prompt is passed back to \texttt{SQLGenerationAgent} for up to \texttt{MAX\_GENERATION\_RETRIES} (default: 2) attempts. If all retries are exhausted, the \texttt{\_fallback\_candidate()} method provides a deterministic SQL query via heuristic pattern matching.
-
-\section{Two Data Modes}
-
-\subsection{Built-in Warehouse Mode}
-The system ships with a pre-seeded retail star schema (detailed in Section~\ref{sec:schema}). After running the \texttt{init-db} and \texttt{seed-db} CLI commands, all warehouse tables are immediately available for NL queries. This mode requires no user data.
-
-\subsection{CSV Upload Mode}
-Users may upload an arbitrary CSV file through the Streamlit interface. The \texttt{CSVIngestor} module analyzes the file, classifies columns by role, constructs a normalized star schema, and writes it to the SQLite database. The orchestrator is scoped to query only the newly created tables via \texttt{set\_active\_blueprint()}, hiding the built-in warehouse tables from schema context. On Streamlit rerun, the active blueprint is re-applied from \texttt{session\_state}.
-
-\section{Two LLM Modes}
-
-\subsection{API Mode}
-When a valid \texttt{HF\_TOKEN} is present in the environment, the \texttt{HuggingFaceSQLGenerator} calls the HuggingFace Inference API using the \texttt{InferenceClient} from \texttt{huggingface\_hub}. The default model is \texttt{Qwen/Qwen2.5-Coder-7B-Instruct}, configurable via \texttt{HF\_INFERENCE\_MODEL}.
-
-\subsection{Fallback Mode}
-When no API token is available, when \texttt{USE\_FALLBACK\_ONLY=true}, or when an API call fails for any reason, the system transparently falls back to the deterministic rule-based SQL generator. This ensures the system remains fully functional in offline and zero-configuration environments.
-
-%% ============================================================
-%%  CHAPTER 4 — SYSTEM DESIGN
-%% ============================================================
-\chapter{System Design}
-\label{chap:design}
-
+% ─── 4. DATABASE DESIGN ────────────────────────────────────
 \section{Database Design}
-\label{sec:schema}
+\label{sec:db}
 
-\subsection{Star Schema Overview}
-
-The built-in warehouse implements a retail star schema following Kimball's dimensional modeling methodology \cite{kimball2013toolkit}. The schema comprises five dimension tables and three fact tables. An entity-relationship diagram is shown in Figure~\ref{fig:er_diagram}.
-
-\begin{figure}[H]
-\centering
-% TODO(diagram): Star schema ER diagram using crow's foot notation.
-% Center: fact_orders (highlighted in blue/gold).
-% Surrounding dimensions connected by FK arrows:
-%   - dim_customer  (customer_id FK)
-%   - dim_product   (product_id FK via fact_order_items)
-%   - dim_date      (order_date_id FK, ship_date_id FK — two arrows)
-%   - dim_region    (region_id FK)
-%   - dim_channel   (channel_id FK)
-% Also show fact_order_items (connected to fact_orders via order_id,
-%   and to dim_product via product_id).
-% And fact_returns (connected to fact_orders via order_id, and dim_date via return_date_id).
-% Color dimension tables light gray, fact tables light blue.
-\imgplaceholder{9cm}{13cm}{%
-Star schema ER diagram (crow's foot notation).\\
-Center: fact\_orders. Surrounding: dim\_customer, dim\_product,\\
-dim\_date, dim\_region, dim\_channel.\\
-Also: fact\_order\_items and fact\_returns with FK connections.}
-\caption{Entity-Relationship diagram of the retail star schema.}
-\label{fig:er_diagram}
-\end{figure}
-
-\subsection{Dimension Tables}
-
-\begin{table}[H]
-\centering
-\caption{Dimension tables: primary keys, key attributes, and cardinality.}
-\label{tab:dim_tables}
-\begin{tabularx}{\textwidth}{@{}llXr@{}}
-\toprule
-\textbf{Table} & \textbf{PK} & \textbf{Key Attributes} & \textbf{Rows} \\
-\midrule
-\texttt{dim\_date}     & \texttt{date\_id}     & year, quarter, month, month\_name, week, day, day\_name, is\_weekend & 1,096 \\
-\texttt{dim\_region}   & \texttt{region\_id}   & country, region\_name, city, market\_tier & 50 \\
-\texttt{dim\_channel}  & \texttt{channel\_id}  & channel\_name, device\_type, campaign\_name & 4 \\
-\texttt{dim\_customer} & \texttt{customer\_id} & age\_band, loyalty\_tier, segment, gender, region\_id (FK) & 6,000 \\
-\texttt{dim\_product}  & \texttt{product\_id}  & category, subcategory, brand, supplier\_name, unit\_price & 300 \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\subsection{Fact Tables}
-
-\begin{table}[H]
-\centering
-\caption{Fact tables: key measures, foreign keys, and approximate row counts.}
-\label{tab:fact_tables}
-\begin{tabularx}{\textwidth}{@{}lXr@{}}
-\toprule
-\textbf{Table} & \textbf{Key Measures and Foreign Keys} & \textbf{Rows (approx.)} \\
-\midrule
-\texttt{fact\_orders}      & subtotal, discount\_amount, tax\_amount, total\_amount; FKs: customer\_id, order\_date\_id, ship\_date\_id, region\_id, channel\_id & 100,000+ \\
-\texttt{fact\_order\_items} & quantity, unit\_price, discount\_amount, net\_amount; FKs: order\_id, product\_id & 300,000+ \\
-\texttt{fact\_returns}     & return\_quantity, return\_amount, resolution\_status; FKs: order\_id, order\_item\_id, return\_date\_id & 10,000+ \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\subsection{Application Metadata Table}
-
-The \texttt{app\_analysis\_sessions} table logs every analysis run for session history:
-\begin{itemize}
-    \item \texttt{session\_id} (PK), \texttt{created\_at}, \texttt{question}, \texttt{approved\_sql}, \texttt{row\_count}
-    \item \texttt{chart\_type}, \texttt{csv\_path}, \texttt{xlsx\_path}, \texttt{pdf\_path}
-    \item \texttt{warnings} (JSON array of non-fatal warning strings)
-\end{itemize}
-
-\section{Module Design}
-
-Table~\ref{tab:modules} documents each module in the \texttt{src/autonomous\_sql\_agent/} package.
-
-\begin{table}[H]
-\centering
-\caption{Module inventory and responsibilities.}
-\label{tab:modules}
-\begin{tabularx}{\textwidth}{@{}lX@{}}
-\toprule
-\textbf{Module} & \textbf{Responsibility} \\
-\midrule
-\texttt{config.py}         & Reads environment variables into a typed \texttt{AppConfig} dataclass via \texttt{python-dotenv} \\
-\texttt{models.py}         & Shared \texttt{@dataclass(slots=True)} definitions: \texttt{AnalysisRequest}, \texttt{AgentState}, \texttt{AnalysisResponse}, \texttt{ChartSpec}, \texttt{ValidationResult}, \texttt{SchemaBlueprint} \\
-\texttt{database.py}       & SQLAlchemy-based \texttt{DatabaseManager}: connection pooling, \texttt{query\_dataframe()}, \texttt{explain\_query()}, \texttt{write\_dataframe()} \\
-\texttt{orchestrator.py}   & \texttt{AnalysisOrchestrator}: coordinates all agents, implements retry loop, manages \texttt{\_active\_table\_filter} \\
-\texttt{agents.py}         & Eight agent classes (see Table~\ref{tab:agents}) \\
-\texttt{model.py}          & \texttt{HuggingFaceSQLGenerator}: prompt construction, HF API calls, JSON response parsing, rule-based fallback \\
-\texttt{sql\_validation.py} & \texttt{SQLValidator}: keyword blocklist, sqlglot AST parse, SELECT-only enforcement \\
-\texttt{metadata.py}       & \texttt{SchemaMetadataService}: live schema introspection, column summary building, glossary construction \\
-\texttt{csv\_ingestion.py} & \texttt{CSVIngestor}: multi-encoding CSV reader, column role classifier, star schema constructor \\
-\texttt{analytics.py}      & \texttt{AnalyticsService}: z-score anomaly detection, trend quantification, cluster hints, follow-up suggestions \\
-\texttt{charting.py}       & \texttt{ChartService}: chart type inference, Plotly figure construction, PNG chart export for PDF \\
-\texttt{exporters.py}      & \texttt{ExportService}: CSV / XLSX / PDF generation with row-limit enforcement \\
-\texttt{prompts.py}        & Prompt templates for SQL generation and natural-language summarization \\
-\texttt{seed.py}           & \texttt{WarehouseSeeder}: synthetic retail data generation using Faker \\
-\texttt{cli.py}            & Click-based CLI exposing \texttt{init-db} and \texttt{seed-db} commands \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{Data Model}
-
-All inter-agent data is carried in the \texttt{AgentState} dataclass. Table~\ref{tab:agent_state} lists its key fields.
-
-\begin{table}[H]
-\centering
-\caption{Key fields of the \texttt{AgentState} dataclass.}
-\label{tab:agent_state}
-\begin{tabularx}{\textwidth}{@{}llX@{}}
-\toprule
-\textbf{Field} & \textbf{Type} & \textbf{Populated by} \\
-\midrule
-\texttt{question}        & \texttt{str}                    & Initialized from \texttt{AnalysisRequest} \\
-\texttt{intent}          & \texttt{str}                    & IntentAgent \\
-\texttt{plan}            & \texttt{list[str]}              & PlanningAgent \\
-\texttt{schema\_context} & \texttt{str}                    & SchemaAgent \\
-\texttt{glossary}        & \texttt{str}                    & SchemaAgent \\
-\texttt{sql\_candidates} & \texttt{list[str]}              & SQLGenerationAgent (accumulates across retries) \\
-\texttt{approved\_sql}   & \texttt{str | None}             & SQLValidationAgent on success \\
-\texttt{result\_df}      & \texttt{pd.DataFrame | None}    & ExecutionAgent \\
-\texttt{insights}        & \texttt{list[str]}              & PatternDiscoveryAgent \\
-\texttt{chart\_spec}     & \texttt{ChartSpec | None}       & PatternDiscoveryAgent \\
-\texttt{summary}         & \texttt{str}                    & ReportAgent \\
-\texttt{warnings}        & \texttt{list[str]}              & Any agent (non-fatal issues) \\
-\texttt{errors}          & \texttt{list[str]}              & Any agent (fatal issues) \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{User Interface Design}
-
-The Streamlit interface is organized into two tabs, as depicted in Figure~\ref{fig:ui_wireframe}.
-
-\textbf{Tab 1 --- Upload \& Process}: Accepts a CSV file upload and renders an animated five-step progress indicator during ingestion. On completion, displays a schema blueprint card showing the fact table name and row count, column classification pills (blue: measures, purple: dimensions, green: dates, gray: identifiers), and dimension table cards with source column references.
-
-\textbf{Tab 2 --- Query Warehouse}: Displays a collapsible schema browser and five auto-generated natural-language quick-prompt buttons tailored to the active dataset. Accepts a free-text question; on submission executes the full eight-agent pipeline and renders: the structured agent plan, the generated SQL (expandable), warnings (yellow boxes), a paginated result table (up to 200 rows), an interactive Plotly chart, a plain-English summary, follow-up question suggestions, and three download buttons (CSV / XLSX / PDF).
+The built-in database follows a star schema design~\cite{kimball2013toolkit}, which
+organises data into one central table of sales records surrounded by smaller lookup
+tables for customers, products, regions, sales channels, and dates.
+There are five lookup tables: \texttt{dim\_customer} (6,000 customers),
+\texttt{dim\_product} (300 products), \texttt{dim\_region} (50 regions),
+\texttt{dim\_channel} (4 channels), and \texttt{dim\_date} (1,096 dates covering 3 years).
+The three main data tables are \texttt{fact\_orders} (over 100,000 orders),
+\texttt{fact\_order\_items} (over 300,000 line items), and
+\texttt{fact\_returns} (over 10,000 returns). Figure~\ref{fig:er} shows how all
+these tables are connected.
 
 \begin{figure}[H]
 \centering
-% TODO(diagram): Annotated wireframe (two-column layout).
-% Left column (Tab 1 active): File upload dropzone, 5-step animated checklist,
-%   schema blueprint card (fact table + colored column pills + 2 dim table cards).
-% Right column (Tab 2 active): schema sidebar (collapsed), 5 quick-prompt button row,
-%   text area with "Ask a business question...", Run button, then below:
-%   plan expander, SQL expander, result DataGrid, Plotly chart,
-%   3 download buttons side-by-side (CSV | XLSX | PDF).
-\imgplaceholder{9cm}{13cm}{%
-Streamlit two-tab wireframe.\\
-Tab 1: CSV upload + animated progress + schema blueprint card.\\
-Tab 2: Schema browser + quick-prompts + question input +\\
-result table + chart + download buttons.}
-\caption{Streamlit interface layout: Tab 1 (Upload \& Process) and Tab 2 (Query Warehouse).}
-\label{fig:ui_wireframe}
+\includegraphics[width=0.88\textwidth]{figs/diagram-3.png}
+\caption{Star schema diagram. The central \texttt{fact\_orders} table (blue) is linked to
+five surrounding lookup tables (gray). Return and order-item tables are also connected.}
+\label{fig:er}
 \end{figure}
 
-%% ============================================================
-%%  CHAPTER 5 — IMPLEMENTATION
-%% ============================================================
-\chapter{Implementation}
-\label{chap:implementation}
+Every query run by the system is saved in a session log table
+(\texttt{app\_analysis\_sessions}) that records the original question, the SQL used,
+how many rows were returned, the chart type, file paths, and any warnings.
 
-\section{Technology Stack}
+% ─── 5. IMPLEMENTATION ─────────────────────────────────────
+\section{Implementation}
 
-Table~\ref{tab:techstack} documents the complete technology stack.
+\subsection{SQL Generation}
 
-\begin{table}[H]
-\centering
-\caption{Complete technology stack.}
-\label{tab:techstack}
-\begin{tabularx}{\textwidth}{@{}llX@{}}
-\toprule
-\textbf{Component} & \textbf{Technology} & \textbf{Role} \\
-\midrule
-Web Framework          & Streamlit              & Interactive browser UI, file upload, widget state \\
-Database Abstraction   & SQLAlchemy             & DB-agnostic connection pooling (SQLite + PostgreSQL) \\
-LLM Inference          & HuggingFace Inference API & Remote SQL generation via \texttt{InferenceClient} \\
-LLM Model              & Qwen/Qwen2.5-Coder-7B-Instruct & SQL code synthesis from structured prompts \\
-SQL Parsing            & sqlglot                & AST-based SQL validation and dialect normalization \\
-Data Processing        & pandas                 & DataFrame manipulation, type coercion, CSV reading \\
-Visualization          & Plotly Express         & Interactive line, bar, and scatter charts \\
-Anomaly Detection      & scikit-learn           & IsolationForest for multi-column anomaly detection \\
-PDF Generation         & ReportLab              & Programmatic A4 PDF with embedded chart images \\
-Excel Export           & xlsxwriter             & XLSX workbook with multiple named sheets \\
-Synthetic Data         & Faker                  & Realistic customer, product, and order generation \\
-Configuration          & python-dotenv          & \texttt{.env}-based typed environment variable loading \\
-\bottomrule
-\end{tabularx}
-\end{table}
+When a user asks a question, the system builds a prompt for the AI model that contains:
+the relevant table and column names from the database; a glossary that maps everyday words
+to their column names (for example, ``revenue'' means the \texttt{total\_amount} column);
+the user's question; a 4-step analysis plan; and rules for writing SQLite-style SQL.
+The AI returns a JSON response containing the SQL query, a suggested chart type, and the
+table names used. If the response is in an unexpected format, the system tries several
+ways to extract the SQL from it.
 
-\section{SQL Generation Agent}
-\label{sec:sql_gen}
+When the AI is not available, a backup generator reads keywords from the question to
+choose one of five ready-made query templates: top-N ranking, monthly trend, returns by
+region, customer segmentation, and a general summary. It fills in the correct column names
+from the database automatically. An example of a backup trend query is shown below.
 
-\subsection{LLM-Based Generation (API Mode)}
-
-The \texttt{HuggingFaceSQLGenerator} constructs a structured prompt comprising:
-
-\begin{enumerate}
-    \item A \textit{system message} defining the model's role as a senior SQL analyst specializing in SQLite syntax.
-    \item A \textit{schema context block} listing all relevant tables with column names and data types, generated by \texttt{SchemaMetadataService.build\_schema\_summary()}, filtered to the active blueprint when in CSV mode.
-    \item A \textit{column glossary} mapping business terms to physical column names (e.g., \textit{``revenue: use \texttt{total\_amount} from \texttt{fact\_orders}''}).
-    \item The \textit{natural-language question} from the user.
-    \item The \textit{structured analysis plan} generated by PlanningAgent.
-    \item \textit{Dialect rules}: explicit instructions to use SQLite functions (\texttt{strftime}, \texttt{CAST(...~AS~INTEGER)}) and avoid PostgreSQL-specific syntax.
-    \item A \textit{JSON output schema} requiring fields: \texttt{sql}, \texttt{analysis\_goal}, \texttt{tables\_used[]}, \texttt{chart\_hint}.
-\end{enumerate}
-
-The API response is parsed through a four-level fallback chain: (1) direct JSON parse; (2) markdown fence stripping (\texttt{```json}); (3) regex extraction of the first \texttt{\{...\}} block; (4) partial JSON recovery for truncated responses.
-
-\subsection{Rule-Based Fallback Generator}
-
-When the LLM is unavailable, \texttt{\_fallback\_candidate()} detects the query pattern from question keywords and constructs SQL using exact column names extracted from the schema context. The five supported patterns are documented in Table~\ref{tab:fallback}. Column detection logic identifies the fact table by regex (prefix/suffix \texttt{fact}), then locates metric columns (keywords: revenue, amount, price), dimension columns (keywords: category, region, segment), and date columns (keywords: date, month, year, or TIMESTAMP type).
-
-\begin{table}[H]
-\centering
-\caption{Rule-based fallback SQL patterns and trigger conditions.}
-\label{tab:fallback}
-\begin{tabularx}{\textwidth}{@{}llX@{}}
-\toprule
-\textbf{Pattern} & \textbf{Trigger Keywords} & \textbf{Query Shape} \\
-\midrule
-Top-N Aggregation & ``top'', ``product'' & \texttt{SELECT dim, SUM(measure) GROUP BY dim ORDER BY SUM DESC LIMIT 10} \\
-Time-Series Trend & ``monthly'', ``trend'', ``over time'' & \texttt{SELECT strftime('\%Y-\%m', date) AS period, SUM(measure) GROUP BY period ORDER BY period} \\
-Returns by Region & ``return'', ``region'' & \texttt{SELECT region, COUNT(*) GROUP BY region ORDER BY count DESC} \\
-Segmentation & ``segment'', ``customer'', ``cluster'' & \texttt{SELECT segment, COUNT(*), SUM(measure), AVG(measure) GROUP BY segment} \\
-Generic & (default fallback) & \texttt{SELECT dim, SUM(measure), COUNT(*) GROUP BY dim ORDER BY SUM DESC} \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{SQL Validation Layer}
-\label{sec:validation}
-
-The \texttt{SQLValidator} enforces a three-layer security model before any query reaches the database:
-
-\begin{enumerate}
-    \item \textbf{DML/DDL Keyword Blocklist}: A word-boundary regular expression scans for destructive keywords: \texttt{INSERT}, \texttt{UPDATE}, \texttt{DELETE}, \texttt{DROP}, \texttt{ALTER}, \texttt{CREATE}, \texttt{GRANT}, \texttt{TRUNCATE}, \texttt{MERGE}. Any match triggers immediate rejection with a descriptive error message.
-    \item \textbf{Dangerous Function Blocklist}: Database-specific dangerous functions are blocked: \texttt{pg\_sleep}, \texttt{dblink}, \texttt{copy}.
-    \item \textbf{AST-Based SELECT-Only Enforcement}: The query is parsed using sqlglot with the SQLite dialect (falling back to dialect-agnostic on parse failure). The parse tree is inspected to confirm: (a) the root statement is SELECT or WITH (CTE); (b) no semicolons appear in non-terminal positions (preventing multi-statement injection); (c) the query does not start with a non-SELECT keyword after whitespace normalization.
-\end{enumerate}
-
-A non-fatal \texttt{SELECT *} warning is emitted when the query scans all columns outside a COUNT context, prompting a more specific query on retry.
-
-\begin{lstlisting}[style=sqlstyle, caption={Example of a query rejected by Layer 1 (DML blocklist).}, label={lst:rejected}]
--- This query is REJECTED by the keyword blocklist (Layer 1):
-SELECT * FROM fact_orders; DELETE FROM fact_orders;
--- Error: "Query contains disallowed keyword: DELETE"
+\begin{lstlisting}[style=sql,caption={Example backup SQL for a monthly trend question.}]
+SELECT strftime('%Y-%m', order_date) AS period,
+       SUM(total_amount)             AS revenue
+FROM   fact_orders
+GROUP  BY period ORDER BY period ASC;
 \end{lstlisting}
 
-\section{CSV Ingestion Pipeline}
-\label{sec:csv}
+\subsection{SQL Safety Checks}
 
-The \texttt{CSVIngestor.process()} method processes uploaded files in seven sequential steps, yielding status strings to drive the Streamlit progress display:
+Every generated SQL query must pass three checks before it is allowed to run:
+\begin{enumerate}[leftmargin=1.5em,itemsep=0pt,topsep=2pt]
+\item \textbf{Keyword filter}: the query is scanned for dangerous words like INSERT,
+      UPDATE, DELETE, DROP, ALTER, and CREATE. If any are found, the query is rejected.
+\item \textbf{Function filter}: specific database functions that could cause harm
+      (\texttt{pg\_sleep}, \texttt{dblink}, \texttt{copy}) are blocked.
+\item \textbf{Structure check}: the query is parsed to confirm it is a simple SELECT
+      or WITH statement. Queries that try to run two statements at once (using a
+      semicolon in the middle) are also rejected. A dry-run test is performed
+      before the query actually reads any data.
+\end{enumerate}
+If a query uses \texttt{SELECT *} to fetch all columns, a warning is shown but the query
+is still allowed to run.
 
-\begin{enumerate}
-    \item \textbf{Read}: Attempts UTF-8, UTF-8-sig, Latin-1, CP1252, ISO-8859-1 in sequence with \texttt{sep=None} for auto-delimiter detection.
-    \item \textbf{Sanitize}: Converts all column headers to SQL-safe snake\_case (alphanumeric + underscore only).
-    \item \textbf{Clean}: Drops fully-empty rows and exact duplicate rows.
-    \item \textbf{Coerce}: Applies type heuristics --- date columns ($\geq 70\%$ parseable after stripping formats), numeric columns ($\geq 90\%$ parseable after removing currency symbols and percentage signs), NA normalization (\textit{nan, none, null, n/a, --}).
-    \item \textbf{Profile}: Classifies each column as ID, date, measure, dimension, or text (see Table~\ref{tab:col_roles}).
-    \item \textbf{Blueprint}: Constructs \texttt{SchemaBlueprint} with one fact table containing all columns, plus one dimension lookup table per categorical column exceeding the cardinality threshold.
-    \item \textbf{Write}: Creates SQLite tables and bulk-inserts data via \texttt{DatabaseManager.write\_dataframe()}.
+\subsection{CSV Upload and Auto-Schema Building}
+
+When a user uploads a CSV file, the system processes it in seven steps:
+\begin{enumerate}[leftmargin=1.5em,itemsep=0pt,topsep=2pt]
+\item \textbf{Read the file} — tries several common text encodings until the file opens.
+\item \textbf{Clean column names} — converts all headers to lowercase with underscores
+      (for example, ``Product Name'' becomes \texttt{product\_name}).
+\item \textbf{Remove bad rows} — drops completely empty rows and exact duplicates.
+\item \textbf{Detect data types} — if at least 70\% of values in a column look like
+      dates, the column is treated as a date. If at least 90\% look like numbers,
+      it is treated as numeric. Currency symbols and percentage signs are stripped first.
+\item \textbf{Classify each column} — columns named with endings like \texttt{\_id} or
+      \texttt{\_code} are treated as identifiers. Columns with names like
+      \texttt{revenue} or \texttt{amount} are measures. Columns with few unique values
+      (up to 50, or less than 5\% of all rows) are treated as categories (dimensions).
+\item \textbf{Build the schema} — one main fact table is created with all columns,
+      plus one small lookup table for each category column.
+\item \textbf{Save to the database} — the tables are written to SQLite and all future
+      queries are restricted to this uploaded data only.
 \end{enumerate}
 
-\begin{table}[H]
+\subsection{Finding Patterns and Creating Outputs}
+
+\textbf{Pattern detection.} After a query runs, the system looks for four things in the
+results: the strongest single value; any unusually high or low values (a value is flagged
+as unusual if it is more than 1.75 standard deviations from the average, using at least
+5 rows); an overall direction of change over time, shown as a percentage increase or
+decrease from first to last value (needs a date column and at least 3 rows); and a
+suggestion to try clustering if the results have two or more numeric columns and at
+least 12 rows.
+
+\textbf{Chart selection.} The system picks the most suitable chart automatically: a line
+chart when the results have a date column, a bar chart when they have a category column, a
+scatter chart when they have two numeric columns, or a plain table when none of the above
+apply. If the data has too many points for a clear line chart, dates are grouped by month.
+
+\textbf{Export formats.} Results can be downloaded in three formats. Each is generated
+independently so a problem with one does not affect the others. The CSV file contains the
+full results table. The Excel file has two sheets: one for the data and one for the SQL
+and key insights. The PDF report includes a title, the top three findings, the SQL used,
+a chart image, and a preview of the first six result rows.
+
+% ─── 6. RESULTS ────────────────────────────────────────────
+\section{Results and System Demonstration}
+
+Figure~\ref{fig:query} shows the query screen where users type their question and choose
+from suggested prompts. Figure~\ref{fig:results} shows the output for the question
+\textit{``Show the top 10 segments by sales''} — the agent's plan, the generated SQL, and
+the result table are all visible.
+
+\begin{figure}[H]
 \centering
-\caption{Column role classification heuristics in \texttt{CSVIngestor}.}
-\label{tab:col_roles}
-\begin{tabularx}{\textwidth}{@{}llX@{}}
+\includegraphics[width=0.92\textwidth]{figs/screen-query.png}
+\caption{The Query Warehouse screen. Users can type a question or click a suggested
+prompt. The schema browser on the left shows the available tables.}
+\label{fig:query}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{figs/results.png}
+\caption{Output screen showing the agent's step-by-step plan, the generated SQL query,
+and the results table for the query
+\textit{``Show the top 10 segment by sales from samplesuperstore\_fact.''}}
+\label{fig:results}
+\end{figure}
+
+Table~\ref{tab:patterns} shows the five question types that were tested, along with the
+mode used and the chart produced. When the backup mode was forced on, all five query types
+still produced correct SQL, charts, and PDF exports.
+
+\begin{table}[H]
+\centering\small
+\caption{Five question types tested during the demonstration.}
+\label{tab:patterns}
+\begin{tabularx}{\textwidth}{@{}llll@{}}
 \toprule
-\textbf{Role} & \textbf{Detection Logic} & \textbf{Example Name Patterns} \\
+\textbf{Question Type}  & \textbf{Mode}   & \textbf{Chart} & \textbf{Example Question} \\
 \midrule
-ID        & Name matches identifier regex (not by cardinality) & \texttt{*\_id}, \texttt{*\_key}, \texttt{*\_code}, \texttt{*\_num} \\
-Date      & dtype is datetime, or name contains date/time hints & \texttt{*date*}, \texttt{*time*}, \texttt{*period*} \\
-Measure   & Numeric dtype + name contains metric hints          & \texttt{*revenue*}, \texttt{*amount*}, \texttt{*price*}, \texttt{*cost*}, \texttt{*qty*} \\
-Dimension & Object dtype + cardinality $\leq \min(50,\,5\%\text{ of rows})$, or name hint & \texttt{*category*}, \texttt{*region*}, \texttt{*segment*}, \texttt{*type*} \\
-Text      & Remaining object columns (high cardinality, no hint) & Free-text descriptions, notes, addresses \\
+Top-N Ranking           & AI model        & bar   & Top 10 products by total revenue \\
+Monthly Trend           & AI model        & line  & Monthly order revenue for 2024 \\
+Return Analysis         & Backup          & bar   & Which regions have the most returns? \\
+Customer Segments       & AI model        & bar   & Revenue by customer loyalty tier \\
+Multi-table Join        & AI model        & table & Average order value by product category \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-The CSV ingestion pipeline is visualized in Figure~\ref{fig:csv_pipeline}.
+\textbf{Testing.} The system has 22 automated tests across five test files. They verify
+that harmful SQL keywords are blocked, that backup queries produce the correct structure,
+that unusual values are correctly flagged, that trends are detected in the right direction,
+and that columns in uploaded CSV files are assigned the right type.
 
-\begin{figure}[H]
-\centering
-% TODO(diagram): Horizontal pipeline flowchart with 7 boxes connected by right-pointing arrows.
-% Box 1: Read CSV (encoding detection list: UTF-8→UTF-8-sig→Latin-1→CP1252→ISO-8859-1)
-% Box 2: Sanitize Headers (snake_case)
-% Box 3: Clean (drop empty rows, deduplicate)
-% Box 4: Coerce Types (date ≥70%, numeric ≥90%, NA normalization)
-% Box 5: Profile Columns (5 role badges: ID/date/measure/dimension/text)
-% Box 6: Build Blueprint (fact table + dim tables)
-% Box 7: Write to DB (SQLite tables)
-% Below each box add a small note with the key action.
-% A "Yields status" dashed arrow points upward from each box toward a "Streamlit progress bar" element.
-\imgplaceholder{5cm}{14cm}{%
-7-step CSV ingestion pipeline flowchart:\\
-Read → Sanitize → Clean → Coerce → Profile → Blueprint → Write\\
-with Streamlit progress bar receiving status updates from each step}
-\caption{Seven-step CSV ingestion pipeline with progressive Streamlit status updates.}
-\label{fig:csv_pipeline}
-\end{figure}
+% ─── 7. CONCLUSION ─────────────────────────────────────────
+\section{Conclusion and Future Work}
 
-\section{Analytics and Pattern Discovery}
+This project shows that a system built from multiple AI agents, with strict safety checks
+and smart schema understanding, can reliably answer business questions by writing and
+running SQL — without the user needing any database knowledge. The system handled all five
+question types correctly, passed all 22 tests, and continued to work in offline mode
+using the backup generator.
 
-The \texttt{AnalyticsService} computes four analytical signals from the query result DataFrame:
+Planned improvements include: running the AI model locally on the user's own computer
+(removing the need for an internet connection); using smarter column-matching to handle
+questions with ambiguous wording~\cite{devlin2019bert}; supporting follow-up questions
+that build on previous results; testing against the standard Spider SQL
+benchmark~\cite{yu2018spider}; adding user accounts for team use; and supporting voice
+questions via speech-to-text~\cite{radford2022whisper}.
 
-\begin{description}[leftmargin=2.5cm]
-    \item[Primary Signal] For a single-row result: reports the exact metric value. For multi-row results: identifies the row with the maximum value in the first numeric column and formats it as the dominant insight.
-    \item[Anomaly Detection] Computes the z-score for each row on the first numeric column ($z = (x - \mu) / \sigma$). Any row with $|z| \geq 1.75$ is flagged. This threshold captures moderate outliers while limiting false positives for typical retail data distributions. Requires $\geq 5$ rows.
-    \item[Trend Detection] For results with at least one date column, one numeric column, and $\geq 3$ rows: sorts by date, extracts first and last values, and computes:
-        \[
-        \Delta\% = \frac{v_{\text{last}} - v_{\text{first}}}{v_{\text{first}}} \times 100
-        \]
-        Returns a directional string (``upward movement of $X\%$'' or ``downward movement of $X\%$'').
-    \item[Cluster Hint] When the result contains $\geq 2$ numeric columns and $\geq 12$ rows, suggests k-means or DBSCAN as a natural next analysis step.
-\end{description}
-
-Additionally, \texttt{\_recommended\_followups()} generates three intent-specific follow-up question suggestions to guide the user's next analytical step.
-
-\section{Visualization}
-
-The \texttt{ChartService} applies a deterministic chart-type inference algorithm (Figure~\ref{fig:chart_logic}):
-
-\begin{enumerate}
-    \item If the LLM provided a \texttt{chart\_hint} and the corresponding column types are present $\rightarrow$ use the hint.
-    \item Else if date column(s) + numeric column exist $\rightarrow$ \textbf{line chart} (trend visualization).
-    \item Else if categorical column(s) + numeric column exist $\rightarrow$ \textbf{bar chart} (category comparison).
-    \item Else if $\geq 2$ numeric columns exist $\rightarrow$ \textbf{scatter plot} (metric relationship).
-    \item Otherwise $\rightarrow$ \textbf{table only} (no chart rendered).
-\end{enumerate}
-
-A spaghetti-line prevention mechanism triggers when the line chart result contains $> 50$ rows and each x-axis value is unique (indicating unaggregated time series): the service automatically re-aggregates to monthly buckets using \texttt{strftime('\%Y-\%m')} before rendering.
-
-\begin{figure}[H]
-\centering
-% TODO(diagram): Decision tree flowchart for chart type selection.
-% Root diamond: "chart_hint provided AND matching columns?"  → Yes → [Use LLM hint chart type]
-% No → "Date col + numeric col?"  → Yes → [Line Chart]
-%       No → "Categorical col + numeric col?" → Yes → [Bar Chart]
-%             No → "≥2 numeric cols?" → Yes → [Scatter Plot]
-%                   No → [Table Only]
-% Add a sub-branch on Line Chart: "rows > 50 AND unique x?" → Yes → "Auto-bucket to monthly"
-\imgplaceholder{7cm}{11cm}{%
-Chart type selection decision tree.\\
-chart\_hint → line → bar → scatter → table.\\
-Line chart spaghetti-prevention sub-branch (auto monthly bucketing).}
-\caption{Chart type selection decision algorithm in \texttt{ChartService}.}
-\label{fig:chart_logic}
-\end{figure}
-
-\section{Export Service}
-
-The \texttt{ExportService.export\_analysis()} wraps each format in an independent \texttt{try}/\texttt{except} block so that failure of one format does not abort the others:
-
-\begin{description}[leftmargin=1.5cm]
-    \item[CSV] Serializes the result DataFrame via \texttt{pandas.to\_csv()}, up to \texttt{EXPORT\_ROW\_LIMIT} rows. Filename: \texttt{\{timestamp\}\_\{slugified-question\}.csv}.
-    \item[XLSX] Two-sheet workbook: Sheet 1 (\textit{results}) contains the full result table; Sheet 2 (\textit{summary}) contains the generated SQL and the top-3 insight strings.
-    \item[PDF] A ReportLab-generated A4 document comprising: a header block (timestamp, question), a bulleted insights section (top 3, truncated at 105 chars), the SQL code block (first 14 lines, 8pt \texttt{Courier}), an embedded Plotly chart image (500$\times$180 px PNG), and a 6-row result preview table. An automatic page break is inserted when content exceeds the A4 page height.
-\end{description}
-
-Results exceeding \texttt{EXPORT\_ROW\_LIMIT} (default: 50,000) are truncated with a warning appended to \texttt{state.warnings}.
-
-%% ============================================================
-%%  CHAPTER 6 — TESTING AND EVALUATION
-%% ============================================================
-\chapter{Testing and Evaluation}
-\label{chap:testing}
-
-\section{Test Strategy}
-
-The test suite follows a unit-first strategy with five independent test modules covering each major subsystem. All tests run via \texttt{pytest} with \texttt{PYTHONPATH=src} to resolve the package without installation. Tests are designed to be database-independent where possible, using in-memory DataFrames and mocked schema contexts.
-
-\section{Test Module Coverage}
-
-\begin{table}[H]
-\centering
-\caption{Test module coverage summary.}
-\label{tab:tests}
-\begin{tabularx}{\textwidth}{@{}lXr@{}}
-\toprule
-\textbf{Module} & \textbf{Coverage} & \textbf{Tests} \\
-\midrule
-\texttt{test\_sql\_validator.py}      & SELECT-only enforcement; rejection of DELETE, INSERT, DROP, multi-statement & 5 \\
-\texttt{test\_fallback\_generator.py} & Rule-based SQL for top-N aggregation and monthly trend queries & 2 \\
-\texttt{test\_charting.py}            & Chart type inference: line (date+numeric), bar (categorical+numeric), scatter ($\geq 2$ numeric), table fallback & 4 \\
-\texttt{test\_analytics.py}           & Z-score anomaly flagging; trend direction detection (upward/downward) & 3 \\
-\texttt{test\_csv\_ingestion.py}      & Column role detection (ID/measure/dimension); blueprint construction; multi-encoding fallback & 8 \\
-\midrule
-\textbf{Total} & & \textbf{22} \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{SQL Validator Tests}
-
-The \texttt{SQLValidator} is exercised against five input categories:
-
-\begin{itemize}
-    \item \textbf{Valid SELECT}: Plain aggregation queries accepted without errors.
-    \item \textbf{DML}: \texttt{DELETE}, \texttt{INSERT}, \texttt{UPDATE} --- each confirmed rejected with a specific keyword error.
-    \item \textbf{DDL}: \texttt{DROP TABLE}, \texttt{ALTER TABLE} --- confirmed rejected.
-    \item \textbf{Multi-statement}: Query containing a semicolon at a non-terminal position --- confirmed rejected.
-    \item \textbf{SELECT *}: Confirmed to emit a non-fatal warning and remain valid (not rejected).
-\end{itemize}
-
-\section{CSV Ingestion Tests}
-
-The CSV ingestor is tested with programmatically constructed DataFrames that probe edge cases:
-
-\begin{itemize}
-    \item Column named \texttt{order\_id} with numeric values $\rightarrow$ classified as \textbf{ID} (not as measure).
-    \item Column named \texttt{revenue} with float values $\rightarrow$ classified as \textbf{measure}.
-    \item Column named \texttt{region} with 5 unique string values across 1,000 rows $\rightarrow$ classified as \textbf{dimension}.
-    \item Blueprint output: fact table name equals \texttt{data\_<filename>}; dimension tables listed for each qualifying column.
-    \item Encoding fallback: ISO-8859-1 encoded file with accented characters read successfully on the third encoding attempt.
-\end{itemize}
-
-\section{Analytics Tests}
-
-Two statistical behaviors are verified:
-
-\begin{enumerate}
-    \item A DataFrame containing one row with a z-score of 3.5 $\rightarrow$ anomaly string returned containing ``deviates sharply''.
-    \item A time-sorted DataFrame where the last value is 40\% higher than the first $\rightarrow$ trend string contains ``upward movement''.
-\end{enumerate}
-
-\section{Test Execution}
-
-\begin{lstlisting}[style=pythonstyle, caption={Running the test suite.}, label={lst:tests}]
-# Full suite
-PYTHONPATH=src pytest tests/ -v
-
-# Single module
-PYTHONPATH=src pytest tests/test_sql_validator.py -v
-
-# Single test by name
-PYTHONPATH=src pytest tests/ -k "test_anomaly_detection" -v
-\end{lstlisting}
-
-%% ============================================================
-%%  CHAPTER 7 — RESULTS AND DISCUSSION
-%% ============================================================
-\chapter{Results and Discussion}
-\label{chap:results}
-
-\section{System Demonstration}
-
-The system was demonstrated across five representative analytical query patterns covering the major analytical intent categories. Screenshots of the key UI states are presented in Figures~\ref{fig:screen_query}--\ref{fig:screen_csv}.
-
-\begin{figure}[H]
-\centering
-% TODO(diagram): Screenshot of Streamlit Tab 2 showing the question text area with the
-% question "Show top 10 products by total revenue" entered, and the "Run Analysis" button
-% visible below it. The schema sidebar should be visible on the left showing table names.
-\imgplaceholder{6.5cm}{13cm}{%
-Screenshot: Streamlit Tab 2 --- Query input.\\
-Question: ``Show top 10 products by total revenue''\\
-Schema sidebar visible on left. Run Analysis button highlighted.}
-\caption{Query input interface (Streamlit Tab 2).}
-\label{fig:screen_query}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-% TODO(diagram): Screenshot showing the analysis results for the top-10 products query.
-% Shows: agent plan expander (open), SQL code block with the generated query,
-% result table with 10 rows (product_name, revenue columns), and Plotly bar chart
-% below the table (horizontal bar chart, products on y-axis, revenue on x-axis).
-\imgplaceholder{8cm}{13cm}{%
-Screenshot: Analysis results for top-10 products query.\\
-Shows: agent plan steps, generated SQL, result table (10 rows),\\
-and Plotly horizontal bar chart.}
-\caption{Analysis results with interactive bar chart for a top-N aggregation query.}
-\label{fig:screen_results}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-% TODO(diagram): Screenshot of Streamlit Tab 1 after uploading a sample CSV.
-% Shows: "Upload complete" green status, the schema blueprint card with fact table name,
-% colored column pills (blue for measures, purple for dimensions, green for dates, gray for IDs),
-% and 2-3 dimension table cards beneath showing dim table names and source columns.
-\imgplaceholder{8cm}{13cm}{%
-Screenshot: Tab 1 after CSV upload.\\
-Schema blueprint card: fact table name + row count,\\
-color-coded column pills, dimension table cards.}
-\caption{Schema blueprint rendered after CSV upload and automatic star schema construction.}
-\label{fig:screen_csv}
-\end{figure}
-
-\section{Query Pattern Coverage}
-
-Table~\ref{tab:query_coverage} documents the five query patterns exercised during demonstration.
-
-\begin{table}[H]
-\centering
-\caption{Query patterns exercised during system demonstration.}
-\label{tab:query_coverage}
-\begin{tabularx}{\textwidth}{@{}lllX@{}}
-\toprule
-\textbf{Intent} & \textbf{LLM Mode} & \textbf{Chart} & \textbf{Sample Question} \\
-\midrule
-Top-N Aggregation   & API      & bar    & ``Show top 10 products by total revenue'' \\
-Time-Series Trend   & API      & line   & ``Show monthly order revenue for 2024'' \\
-Return Anomaly      & Fallback & bar    & ``Which regions have the highest return rate?'' \\
-Segmentation        & API      & bar    & ``Compare revenue across customer loyalty tiers'' \\
-Multi-Table Join    & API      & table  & ``Show average order value by product category'' \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{Fallback Robustness Verification}
-
-Setting \texttt{USE\_FALLBACK\_ONLY=true} in the environment forces the rule-based SQL generator for all queries. Under this configuration, all five supported query patterns produced executable SQL covering the correct tables and columns. The PDF export, anomaly detection, and chart rendering all functioned correctly with fallback-generated SQL results, confirming that the fallback path is a complete, working alternative to the LLM path.
-
-\section{Limitations and Observations}
-
-Several limitations were observed during testing:
-
-\begin{itemize}
-    \item \textbf{Schema ambiguity}: For questions that reference column names loosely (e.g., ``sales'' when the physical column is \texttt{total\_amount}), the LLM may select an incorrect column on the first attempt, typically correcting on retry after the error-feedback loop injects the glossary.
-    \item \textbf{Complex multi-hop joins}: Queries requiring three or more table joins occasionally omitted intermediate join conditions. The error feedback loop resolved this in most cases within one retry.
-    \item \textbf{Cardinality assumptions}: The z-score anomaly detector assumes a roughly Gaussian distribution. Heavily right-skewed metrics (e.g., return amounts) may produce high z-scores for expected high-value outliers, requiring threshold tuning.
-    \item \textbf{Session persistence}: The \texttt{\_active\_table\_filter} is a Streamlit session-level attribute. If the Streamlit server is restarted, the active CSV blueprint is lost and the user must re-upload the file.
-    \item \textbf{Single chart per query}: The system renders one chart type per analysis result. Queries where multiple visualization types would be informative (e.g., both trend line and bar chart) are limited to a single chart.
-\end{itemize}
-
-%% ============================================================
-%%  CHAPTER 8 — CONCLUSION AND FUTURE WORK
-%% ============================================================
-\chapter{Conclusion and Future Work}
-\label{chap:conclusion}
-
-\section{Conclusion}
-
-This project has successfully designed, implemented, and demonstrated a functional end-to-end Autonomous SQL Agent that enables non-technical users to query a retail data warehouse using natural-language questions. The system integrates eight specialized AI agents in a sequential pipeline with an error-feedback retry loop, providing robust SQL generation with graceful degradation to a rule-based fallback when the LLM API is unavailable.
-
-The key contributions --- a modular multi-agent pipeline, schema-aware error feedback, automated CSV-to-star-schema ingestion, multi-layer SQL safety enforcement, and multi-format export --- collectively demonstrate that agentic AI architectures can deliver reliable and safe natural-language analytics over relational data warehouses. The system achieved correct query generation across all five analytical intent categories (aggregation, trend, return analysis, segmentation, and multi-table join) and passed all 22 automated test cases.
-
-The project validates the thesis that \textit{instruction-tuned code LLMs, when embedded within a structured agent pipeline with explicit safety enforcement and schema grounding, can bridge the SQL expertise gap for business users without compromising data warehouse integrity.}
-
-\section{Future Work}
-
-The following directions are identified for future enhancement:
-
-\begin{enumerate}
-    \item \textbf{Local LLM deployment}: Loading Qwen2.5-Coder-7B with 4-bit quantization (via bitsandbytes) on a machine with 16~GB RAM would eliminate the API token dependency and enable fully offline deployment.
-    \item \textbf{Semantic schema linking}: Replacing keyword-based schema context construction with dense embedding retrieval (e.g., a fine-tuned BERT-based \cite{devlin2019bert} encoder) would improve column selection accuracy for ambiguous queries.
-    \item \textbf{Conversational analytics}: Extending the pipeline to support multi-turn sessions where subsequent questions can reference prior results would enable iterative, drill-down analytics.
-    \item \textbf{Formal benchmark evaluation}: Evaluating the system on the Spider NL-to-SQL benchmark \cite{yu2018spider} would position results relative to published Text-to-SQL systems and quantify generation accuracy.
-    \item \textbf{Multi-user deployment}: Adding session isolation, user authentication, and connection pooling would make the system suitable for small-team production deployment.
-    \item \textbf{Voice input integration}: Integrating a speech-to-text frontend (e.g., OpenAI Whisper \cite{radford2022whisper}) would extend accessibility to users who prefer spoken analytical queries.
-    \item \textbf{Automated chart narrative}: Generating natural-language chart annotations alongside the Plotly figure (e.g., labeling the peak bar or the inflection point on a trend line) would reduce the cognitive load of result interpretation.
-\end{enumerate}
-
-%% ============================================================
-%%  REFERENCES
-%% ============================================================
+% ─── REFERENCES ────────────────────────────────────────────
 \bibliographystyle{IEEEtran}
 \bibliography{references}
-
-%% ============================================================
-%%  APPENDIX A — ENVIRONMENT VARIABLES
-%% ============================================================
-\appendix
-\chapter{Environment Variable Reference}
-\label{app:envvars}
-
-\begin{table}[H]
-\centering
-\caption{Complete environment variable reference (\texttt{.env} file).}
-\label{tab:env_vars}
-\begin{tabularx}{\textwidth}{@{}llX@{}}
-\toprule
-\textbf{Variable} & \textbf{Default} & \textbf{Description} \\
-\midrule
-\texttt{DATABASE\_URL}         & \texttt{sqlite:///data/warehouse.db}      & Database connection string (SQLite or PostgreSQL) \\
-\texttt{HF\_TOKEN}             & (empty)                                   & HuggingFace Inference API token; enables LLM mode \\
-\texttt{HF\_INFERENCE\_MODEL}  & \texttt{Qwen/Qwen2.5-Coder-7B-Instruct}   & Model used for API-based SQL generation \\
-\texttt{HF\_MODEL\_ID}         & \texttt{defog/sqlcoder-7b-2}              & Reserved for future local model loading \\
-\texttt{DEVICE}                & \texttt{auto}                             & \texttt{cpu} / \texttt{cuda} / \texttt{auto} \\
-\texttt{STATEMENT\_TIMEOUT\_MS} & \texttt{10000}                           & PostgreSQL query timeout in milliseconds \\
-\texttt{EXPORT\_DIR}           & \texttt{exports}                          & Directory for generated CSV/XLSX/PDF files \\
-\texttt{PREVIEW\_ROW\_LIMIT}   & \texttt{200}                              & Rows displayed in Streamlit result table \\
-\texttt{EXPORT\_ROW\_LIMIT}    & \texttt{50000}                            & Hard cap on downloadable export rows \\
-\texttt{MAX\_GENERATION\_RETRIES} & \texttt{2}                             & SQL generation retry attempts before fallback \\
-\texttt{DEFAULT\_ORDER\_COUNT} & \texttt{10000}                            & Orders seeded in the built-in warehouse \\
-\texttt{USE\_FALLBACK\_ONLY}   & \texttt{false}                            & Force rule-based SQL, bypassing LLM \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-%% ============================================================
-%%  APPENDIX B — QUICK-START COMMANDS
-%% ============================================================
-\chapter{Quick-Start Commands}
-\label{app:quickstart}
-
-\begin{lstlisting}[style=pythonstyle, caption={Full setup and run sequence.}]
-# Step 1: Create and activate virtual environment
-python -m venv .venv
-source .venv/bin/activate        # Linux / macOS
-# .venv\Scripts\activate         # Windows (Command Prompt)
-
-# Step 2: Install Python dependencies
-pip install -r requirements.txt
-
-# Step 3: Configure environment
-cp .env.example .env
-# Edit .env: add HF_TOKEN if LLM mode is desired
-
-# Step 4: Initialize the built-in data warehouse
-PYTHONPATH=src python -m autonomous_sql_agent.cli init-db
-PYTHONPATH=src python -m autonomous_sql_agent.cli seed-db --orders 10000
-
-# Step 5: Launch the Streamlit application
-streamlit run app/streamlit_app.py
-
-# Step 6 (optional): Run the full test suite
-PYTHONPATH=src pytest tests/ -v
-
-# Step 7 (optional): Lint and format
-ruff check src/ tests/
-black src/ tests/
-\end{lstlisting}
-
-%% ============================================================
-%%  APPENDIX C — SAMPLE GENERATED SQL
-%% ============================================================
-\chapter{Sample Generated SQL Queries}
-\label{app:sql_samples}
-
-\begin{lstlisting}[style=sqlstyle, caption={LLM-generated SQL: top 10 products by net revenue.}]
-SELECT
-    p.product_name,
-    p.category,
-    SUM(oi.net_amount)         AS total_revenue,
-    COUNT(DISTINCT o.order_id) AS order_count
-FROM fact_orders o
-JOIN fact_order_items oi ON o.order_id   = oi.order_id
-JOIN dim_product      p  ON oi.product_id = p.product_id
-WHERE o.order_status != 'cancelled'
-GROUP BY p.product_name, p.category
-ORDER BY total_revenue DESC
-LIMIT 10;
-\end{lstlisting}
-
-\begin{lstlisting}[style=sqlstyle, caption={LLM-generated SQL: monthly revenue trend (2024).}]
-SELECT
-    strftime('%Y-%m', d.full_date)  AS month,
-    SUM(o.total_amount)             AS monthly_revenue,
-    COUNT(DISTINCT o.order_id)      AS order_count
-FROM fact_orders o
-JOIN dim_date d ON o.order_date_id = d.date_id
-WHERE d.year = 2024
-GROUP BY strftime('%Y-%m', d.full_date)
-ORDER BY month ASC;
-\end{lstlisting}
-
-\begin{lstlisting}[style=sqlstyle, caption={LLM-generated SQL: customer segmentation by loyalty tier.}]
-SELECT
-    c.loyalty_tier,
-    COUNT(DISTINCT o.order_id)  AS total_orders,
-    SUM(o.total_amount)         AS total_revenue,
-    AVG(o.total_amount)         AS avg_order_value,
-    COUNT(DISTINCT o.customer_id) AS unique_customers
-FROM fact_orders o
-JOIN dim_customer c ON o.customer_id = c.customer_id
-WHERE o.order_status != 'cancelled'
-GROUP BY c.loyalty_tier
-ORDER BY total_revenue DESC;
-\end{lstlisting}
 
 \end{document}

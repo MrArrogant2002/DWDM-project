@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Autonomous SQL Agent — Presentation</title>
+<style>
+/* ─── PRINT ──────────────────────────────────────────────
+   Heavy lifting is done by beforeprint/afterprint JS.
+   CSS only handles: page size, color fidelity, hide nav.
+─────────────────────────────────────────────────────────── */
+@media print {
+  @page { size: 10in 5.625in; margin: 0; }
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html  { overflow: visible !important; height: auto !important; }
+  body  { overflow: visible !important; height: auto !important;
+          margin: 0 !important; background: #0d1117 !important; }
+  #prog, #nav, #ctr, #hint { display: none !important; }
+}
+
+/* ─── RESET ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  background: #0d1117; }
+
+/* ─── SHELL: viewport container ────────────────────────── */
+#shell {
+  width: 100vw; height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: #0d1117; overflow: hidden;
+}
+
+/* ─── CANVAS: fixed 960×540 PPT canvas ──────────────────── */
+#canvas {
+  width: 960px; height: 540px;
+  position: relative; flex-shrink: 0;
+  transform-origin: center center;
+}
+
+/* ─── SLIDE BASE ─────────────────────────────────────────── */
+:root {
+  --bg:  #0d1117; --bg2: #161b27;
+  --s1:  rgba(255,255,255,.06); --s2: rgba(255,255,255,.11);
+  --bd:  rgba(255,255,255,.11);
+  --in:  #818cf8; --sk: #38bdf8; --em: #34d399; --pk: #f472b6; --am: #fbbf24;
+  --tx:  #e2e8f0; --mu: #94a3b8; --dm: #64748b; --wh: #ffffff;
+  --g1:  linear-gradient(135deg,#818cf8,#38bdf8);
+  --g2:  linear-gradient(135deg,#f472b6,#818cf8);
+  --g3:  linear-gradient(135deg,#34d399,#38bdf8);
+}
+
+.slide {
+  position: absolute; top: 0; left: 0; width: 960px; height: 540px;
+  background: linear-gradient(135deg,var(--bg) 0%,var(--bg2) 100%);
+  display: flex; flex-direction: column;
+  opacity: 0; transform: translateX(60px); pointer-events: none;
+  transition: opacity .32s cubic-bezier(.4,0,.2,1), transform .32s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+.slide.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.slide.bx     { transform: translateX(-60px); opacity: 0; }
+
+/* ─── CHROME: header / body / footer ───────────────────── */
+.sh {
+  flex-shrink: 0; height: 50px; width: 100%;
+  background: rgba(255,255,255,.03); border-bottom: 1px solid var(--bd);
+  display: flex; align-items: center; padding: 0 18px;
+  position: relative; overflow: hidden;
+}
+.sh::before { content:''; position: absolute; top:0; left:0; right:0; height:3px; background:var(--g1); }
+.sh h2 {
+  font-size: 15px; font-weight: 700; position: relative; z-index:1;
+  background: var(--g1); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text;
+}
+.badge {
+  margin-left: auto; background: rgba(129,140,248,.13);
+  border: 1px solid rgba(129,140,248,.3); color: var(--in);
+  font-size: 8.5px; font-weight: 700; padding: 2px 8px;
+  border-radius: 20px; letter-spacing: .04em; flex-shrink: 0;
+}
+
+/* body height = 540 - 50(header) - 24(footer) = 466px */
+.sb {
+  flex: 1; overflow: hidden; padding: 11px 18px;
+  display: flex; flex-direction: column; gap: 8px;
+  height: 466px;
+}
+
+.sf {
+  flex-shrink: 0; height: 24px; width: 100%;
+  background: rgba(255,255,255,.02); border-top: 1px solid var(--bd);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 14px; font-size: 9px; color: var(--dm);
+}
+
+/* ─── LAYOUT ────────────────────────────────────────────── */
+.cols { display: grid; gap: 10px; flex: 1; overflow: hidden; min-height: 0; }
+.c2   { grid-template-columns: 1fr 1fr; }
+.c2w  { grid-template-columns: 1.2fr .8fr; }
+.c2nw { grid-template-columns: .7fr 1.3fr; }
+.c55  { grid-template-columns: 1.1fr .9fr; }
+.col  { display: flex; flex-direction: column; gap: 6px; overflow: hidden; min-height: 0; }
+.ci   { display: flex; align-items: center; justify-content: center;
+        overflow: hidden; min-height: 0; }
+
+/* ─── TYPE ──────────────────────────────────────────────── */
+.sub {
+  font-size: 8px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--in);
+  padding-bottom: 2px; border-bottom: 1px solid rgba(129,140,248,.2);
+}
+.sub.em  { color: var(--em); border-bottom-color: rgba(52,211,153,.2); }
+.sub.sk  { color: var(--sk); border-bottom-color: rgba(56,189,248,.2); }
+
+ul.bul { list-style: none; }
+ul.bul li {
+  padding: 2.5px 0 2.5px 14px; font-size: 11px;
+  line-height: 1.42; color: var(--tx); position: relative;
+}
+ul.bul li::before {
+  content:''; position: absolute; left: 0; top: 7px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--in);
+}
+ul.bul li.em::before { background: var(--em); }
+ul.bul li.sk::before { background: var(--sk); }
+ul.bul li.pk::before { background: var(--pk); }
+
+/* ─── GLASS CARD ─────────────────────────────────────────── */
+.glass    { background: var(--s1); border: 1px solid var(--bd); border-radius: 8px; padding: 8px 10px; }
+.glass.sm { padding: 5px 8px; border-radius: 6px; }
+
+/* ─── TAG ───────────────────────────────────────────────── */
+.tag { display: inline-flex; align-items: center; border-radius: 4px; padding: 1px 6px; font-size: 8.5px; font-weight: 700; }
+.tag.in { background: rgba(129,140,248,.14); color: var(--in); border: 1px solid rgba(129,140,248,.26); }
+.tag.em { background: rgba(52,211,153,.12);  color: var(--em); border: 1px solid rgba(52,211,153,.26); }
+.tag.sk { background: rgba(56,189,248,.12);  color: var(--sk); border: 1px solid rgba(56,189,248,.26); }
+.tag.pk { background: rgba(244,114,182,.12); color: var(--pk); border: 1px solid rgba(244,114,182,.26); }
+.tag.am { background: rgba(251,191,36,.11);  color: var(--am); border: 1px solid rgba(251,191,36,.26); }
+
+/* ─── STAT ──────────────────────────────────────────────── */
+.stat { background: var(--s1); border: 1px solid var(--bd); border-radius: 8px; padding: 7px 9px; }
+.stat .num {
+  font-size: 22px; font-weight: 800; line-height: 1;
+  background: var(--g1); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text;
+}
+.stat .num.g3 { background: var(--g3); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.stat .num.g2 { background: var(--g2); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.stat .num.sm { font-size: 16px; }
+.stat .lbl  { font-size: 9px;  color: var(--mu); margin-top: 2px; }
+.stat .desc { font-size: 8.5px; color: var(--dm); }
+
+/* ─── AGENT CARD ─────────────────────────────────────────── */
+.ac {
+  background: var(--s1); border: 1px solid var(--bd); border-radius: 7px;
+  padding: 5px 8px; border-left: 3px solid var(--in);
+}
+.ac:nth-child(2n) { border-left-color: var(--sk); }
+.ac:nth-child(3n) { border-left-color: var(--em); }
+.ac:nth-child(4n) { border-left-color: var(--pk); }
+.ac .an  { font-size: 7.5px; color: var(--mu); font-weight: 700; letter-spacing: .05em; }
+.ac .anm { font-size: 10.5px; font-weight: 700; color: var(--tx); }
+.ac .ad  { font-size: 9px; color: var(--mu); }
+
+/* ─── CALLOUT ────────────────────────────────────────────── */
+.callout {
+  background: rgba(129,140,248,.09); border: 1px solid rgba(129,140,248,.24);
+  border-radius: 7px; padding: 6px 10px 6px 13px;
+  font-size: 9.5px; color: var(--tx); line-height: 1.48;
+  flex-shrink: 0; position: relative; overflow: hidden;
+}
+.callout::before {
+  content:''; position: absolute; left:0; top:0; bottom:0;
+  width: 3px; background: var(--g1);
+}
+.callout strong { color: var(--in); font-weight: 700; }
+
+/* ─── TABLE ──────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+table th {
+  background: rgba(129,140,248,.12); color: var(--in); padding: 4px 7px;
+  text-align: left; font-weight: 700; font-size: 8.5px;
+  letter-spacing: .05em; text-transform: uppercase;
+  border-bottom: 1px solid rgba(129,140,248,.2);
+}
+table td { padding: 3.5px 7px; border-bottom: 1px solid rgba(255,255,255,.05); color: var(--tx); }
+table tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+table tr.tot td { font-weight: 700; color: var(--in); }
+
+/* ─── VALIDATION LAYERS ──────────────────────────────────── */
+.layer { border-radius: 7px; overflow: hidden; border: 1px solid var(--bd); }
+.layer .lh {
+  padding: 4px 9px; font-size: 9px; font-weight: 700;
+  display: flex; align-items: center; gap: 6px;
+}
+.layer .ln {
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7.5px; font-weight: 800; flex-shrink: 0; color: white;
+}
+.layer .lb2 {
+  background: rgba(255,255,255,.03); padding: 4px 9px;
+  font-size: 8.5px; font-family: 'Courier New', monospace;
+  color: var(--mu); line-height: 1.4;
+}
+.l1 .lh { background: rgba(129,140,248,.14); color: var(--in); } .l1 .ln { background: var(--in); }
+.l2 .lh { background: rgba(56,189,248,.12);  color: var(--sk); } .l2 .ln { background: var(--sk); }
+.l3 .lh { background: rgba(52,211,153,.11);  color: var(--em); } .l3 .ln { background: var(--em); }
+
+/* ─── BENTO (12-cell grid) ───────────────────────────────── */
+.bento { display: grid; gap: 6px; flex: 1; min-height: 0; }
+.b12   { grid-template-columns: repeat(6,1fr); grid-template-rows: 1fr 1fr; }
+.bt {
+  background: var(--s1); border: 1px solid var(--bd); border-radius: 7px;
+  padding: 6px 8px; display: flex; flex-direction: column; justify-content: space-between;
+}
+.bt .btl { font-size: 9.5px; font-weight: 700; color: var(--tx); }
+.bt .bts { font-size: 8px; color: var(--mu); margin-top: 1px; }
+.bt .btb { font-size: 7.5px; font-weight: 700; padding: 1px 5px;
+           border-radius: 3px; display: inline-block; margin-top: 3px; }
+
+/* ─── CHECK ITEMS (Conclusion) ───────────────────────────── */
+.ci-wrap { display: flex; flex-direction: column; gap: 4px; }
+.ci-item {
+  background: var(--s1); border: 1px solid var(--bd); border-radius: 6px;
+  padding: 4px 8px; display: flex; align-items: flex-start; gap: 6px;
+}
+.ci-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 7.5px; margin-top: 1px;
+}
+.ci-dot.ok { background: rgba(52,211,153,.16); color: var(--em); border: 1px solid rgba(52,211,153,.3); }
+.ci-dot.ar { background: rgba(56,189,248,.12);  color: var(--sk); border: 1px solid rgba(56,189,248,.28); }
+.ci-txt { font-size: 9.5px; color: var(--tx); line-height: 1.38; }
+
+/* ─── SCREENSHOTS ────────────────────────────────────────── */
+.sg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; min-height: 0; }
+.sc { display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow: hidden; }
+.sl {
+  font-size: 8.5px; font-weight: 700; text-align: center; flex-shrink: 0;
+  padding: 3px; border-radius: 4px;
+  background: rgba(129,140,248,.1); border: 1px solid rgba(129,140,248,.22); color: var(--in);
+}
+.sc img { flex: 1; width: 100%; min-height: 0; object-fit: contain;
+          border-radius: 6px; border: 1px solid var(--bd); }
+
+/* ─── IMG PANEL (constrained, not full-screen) ───────────── */
+.img-panel { max-width: 100%; max-height: 100%; object-fit: contain;
+             border-radius: 6px; border: 1px solid var(--bd); display: block; }
+
+/* ─── QUOTE BOX ──────────────────────────────────────────── */
+.qbox { background: var(--s1); border: 1px solid var(--bd); border-radius: 8px;
+        padding: 9px 11px; position: relative; overflow: hidden; }
+.qbox::before { content:''; position: absolute; top:0; left:0; right:0; height:2px; background: var(--g2); }
+.qbox .ql { font-size: 7.5px; font-weight: 800; letter-spacing: .07em;
+            text-transform: uppercase; margin-bottom: 4px; }
+.qbox .qt { font-size: 10px; color: var(--tx); line-height: 1.55; }
+.qbox .qt strong { color: var(--wh); }
+
+/* ─── TIER ROW ───────────────────────────────────────────── */
+.tier {
+  background: var(--s1); border: 1px solid var(--bd); border-radius: 7px;
+  padding: 6px 9px; display: flex; align-items: center; gap: 8px;
+}
+.tier .tn {
+  font-size: 8px; font-weight: 800; letter-spacing: .04em;
+  padding: 2px 7px; border-radius: 4px; color: white; flex-shrink: 0;
+}
+.tier .td { font-size: 10.5px; color: var(--tx); font-weight: 600; }
+.tier .ts { font-size: 8.5px; color: var(--mu); margin-top: 1px; }
+
+/* ══════════════════════════════════════════════════════════
+   TITLE SLIDE  (no header/footer, full 960×540)
+══════════════════════════════════════════════════════════ */
+.slide.title {
+  background: linear-gradient(135deg,#050816 0%,#0d1433 50%,#0f1e35 100%);
+  flex-direction: row;
+}
+.tl { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 38px 36px; }
+.tpill {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  padding: 4px 12px; border-radius: 20px; margin-bottom: 14px;
+  background: rgba(129,140,248,.15); border: 1px solid rgba(129,140,248,.3);
+  color: var(--in); letter-spacing: .05em;
+}
+.tl h1 { font-size: 22px; font-weight: 800; color: var(--wh); line-height: 1.22; margin-bottom: 13px; }
+.tl h1 span {
+  background: var(--g1); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text;
+}
+.tdiv { width: 44px; height: 3px; border-radius: 2px; background: var(--g1); margin: 0 0 13px; }
+.tl .aut { color: var(--tx); font-size: 12px; line-height: 1.9; }
+.tl .aut strong { color: var(--wh); }
+.tl .gd   { color: var(--mu); font-size: 11px; margin-top: 7px; }
+.tl .inst { color: var(--dm); font-size: 10px; margin-top: 3px; }
+.tr {
+  width: 44%; padding: 16px 18px 16px 8px;
+  display: flex; align-items: center; justify-content: center; position: relative;
+}
+.tr::before {
+  content:''; position: absolute; left:0; top:10%; bottom:10%;
+  width: 1px; background: rgba(255,255,255,.07);
+}
+.aimg {
+  width: 100%; max-height: 86%; object-fit: contain; border-radius: 9px;
+  box-shadow: 0 0 40px rgba(99,102,241,.3), 0 4px 24px rgba(0,0,0,.6);
+  border: 1px solid rgba(99,102,241,.2);
+}
+
+/* ══════════════════════════════════════════════════════════
+   THANK YOU SLIDE
+══════════════════════════════════════════════════════════ */
+.slide.ty {
+  background: linear-gradient(135deg,#050816 0%,#0d1433 100%);
+  align-items: center; justify-content: center;
+}
+.tyb { text-align: center; }
+.tyb h1 {
+  font-size: 48px; font-weight: 900;
+  background: var(--g1); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text;
+}
+.tyd { height: 3px; width: 70px; background: var(--g1); border-radius: 2px; margin: 10px auto; }
+.tyb .q  { color: rgba(255,255,255,.65); font-size: 16px; margin-bottom: 18px; }
+.tyb .team { display: flex; gap: 12px; justify-content: center; margin-bottom: 14px; }
+.tyc {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: 9px; padding: 10px 20px; text-align: center;
+}
+.tyc .nm { color: var(--wh); font-weight: 700; font-size: 12px; }
+.tyc .rl { color: var(--in); font-size: 10px; margin-top: 2px; }
+.tyb .gy  { color: var(--mu); font-size: 11px; }
+.tyb .gy2 { color: var(--dm); font-size: 10px; margin-top: 3px; }
+
+/* ─── OUTLINE GRID ───────────────────────────────────────── */
+.og { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; flex: 1; }
+.oi {
+  background: var(--s1); border: 1px solid var(--bd); border-radius: 7px;
+  padding: 7px 11px; display: flex; align-items: center; gap: 8px;
+}
+.onum {
+  font-size: 13px; font-weight: 800; min-width: 1.3rem;
+  background: var(--g1); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text;
+}
+.otxt { font-size: 10.5px; color: var(--tx); }
+
+/* ─── PROGRESS + NAV ─────────────────────────────────────── */
+#prog { position: fixed; top:0; left:0; right:0; height:3px;
+        background: rgba(255,255,255,.06); z-index: 600; }
+#pf   { height:100%; background: var(--g1); transition: width .3s ease; border-radius: 0 2px 2px 0; }
+
+#nav { position: fixed; bottom: 14px; right: 16px; display: flex; gap: 6px; z-index: 500; }
+#nav button {
+  background: rgba(255,255,255,.1); border: 1px solid var(--bd); color: var(--tx);
+  border-radius: 50%; width: 34px; height: 34px; font-size: .85rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .18s; backdrop-filter: blur(8px);
+}
+#nav button:hover { background: rgba(129,140,248,.22); border-color: rgba(129,140,248,.42); color: var(--in); }
+
+#ctr  { position: fixed; bottom: 19px; left: 50%; transform: translateX(-50%);
+        background: rgba(255,255,255,.1); backdrop-filter: blur(8px);
+        border: 1px solid var(--bd); color: var(--mu);
+        font-size: 10px; padding: 3px 12px; border-radius: 20px; z-index: 500; }
+#hint { position: fixed; bottom: 19px; left: 16px;
+        color: rgba(255,255,255,.2); font-size: 9px; z-index: 500; }
+</style>
+</head>
+<body>
+<div id="prog"><div id="pf" style="width:6.67%"></div></div>
+
+<div id="shell">
+<div id="canvas">
+
+<!-- ══ 1 — TITLE ══ -->
+<div class="slide title active">
+  <div class="tl">
+    <span class="tpill">M.Tech Project &nbsp;·&nbsp; Data Warehousing &amp; Data Mining</span>
+    <h1>Autonomous SQL Agent for <span>Natural Language Analytics</span> over Data Warehouses</h1>
+    <div class="tdiv"></div>
+    <div class="aut"><strong>Rapolu Eswara Balu</strong> &nbsp;·&nbsp; AP25122040002<br><strong>Alapati Venkata Rayudu</strong> &nbsp;·&nbsp; AP25122040029</div>
+    <div class="gd">Guide &nbsp;·&nbsp; <strong style="color:#e2e8f0">Sourav Kumar Purohit</strong></div>
+    <div class="inst">Dept. of AI &amp; ML &nbsp;·&nbsp; SRMAP University, Amaravathi, Andhra Pradesh</div>
+  </div>
+  <div class="tr"><img class="aimg" src="figs/app-opening.png" alt="App"></div>
+</div>
+
+
+<!-- ══ 2 — MOTIVATION & OBJECTIVES ══ -->
+<div class="slide">
+  <div class="sh"><h2>Motivation, Problem Statement &amp; Objectives</h2></div>
+  <div class="sb">
+    <div class="cols c2" style="flex:1">
+      <div class="col">
+        <div class="sub">The Gap &amp; Opportunity</div>
+        <ul class="bul">
+          <li>SQL is a high barrier for domain experts — analysts, managers, planners</li>
+          <li>Multi-join star-schema queries demand specialist technical knowledge</li>
+          <li class="em">LLMs generate accurate SQL from plain natural language</li>
+          <li class="em">Multi-agent pipelines safely decompose complex analytical tasks</li>
+        </ul>
+        <div class="qbox" style="margin-top:4px">
+          <div class="ql" style="color:var(--pk)">Problem Statement</div>
+          <div class="qt">Automatically generate <strong>safe, correct SQL</strong> from a natural-language question, execute it, discover patterns, and present results — <em>no SQL knowledge required.</em></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="sub sk">Objectives</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;flex:1">
+          <div class="glass sm"><div style="font-size:8px;font-weight:700;color:var(--in);margin-bottom:2px">Architecture</div><div style="font-size:9.5px;color:var(--tx)">8-agent NL-to-SQL pipeline on a retail star schema</div></div>
+          <div class="glass sm"><div style="font-size:8px;font-weight:700;color:var(--sk);margin-bottom:2px">LLM Integration</div><div style="font-size:9.5px;color:var(--tx)">Qwen2.5-Coder-7B + rule-based offline fallback</div></div>
+          <div class="glass sm"><div style="font-size:8px;font-weight:700;color:var(--em);margin-bottom:2px">SQL Safety</div><div style="font-size:9.5px;color:var(--tx)">3-layer enforcement — no DML reaches the DB</div></div>
+          <div class="glass sm"><div style="font-size:8px;font-weight:700;color:var(--in);margin-bottom:2px">CSV Ingestion</div><div style="font-size:9.5px;color:var(--tx)">Auto CSV → star schema in 7 steps</div></div>
+          <div class="glass sm"><div style="font-size:8px;font-weight:700;color:var(--sk);margin-bottom:2px">Analytics</div><div style="font-size:9.5px;color:var(--tx)">Z-score anomaly · trend · chart inference</div></div>
+          <div class="glass sm"><div style="font-size:8px;font-weight:700;color:var(--em);margin-bottom:2px">Export &amp; UI</div><div style="font-size:9.5px;color:var(--tx)">CSV · XLSX · PDF · Streamlit web app</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>2 / 15</span></div>
+</div>
+
+
+<!-- ══ 3 — SYSTEM ARCHITECTURE ══ -->
+<div class="slide">
+  <div class="sh"><h2>System Architecture</h2><span class="badge">4-Tier Design</span></div>
+  <div class="sb">
+    <div class="cols c55" style="flex:1">
+      <div class="col" style="justify-content:center;gap:6px">
+        <div class="sub">Architecture Tiers</div>
+        <div class="tier"><div class="tn" style="background:rgba(129,140,248,.55)">T1</div><div><div class="td">Streamlit Web UI</div><div class="ts">CSV upload · question input · results · chart · export</div></div></div>
+        <div class="tier"><div class="tn" style="background:rgba(56,189,248,.5)">T2</div><div><div class="td">AnalysisOrchestrator</div><div class="ts">Coordinates agents · manages AgentState · retry loop</div></div></div>
+        <div class="tier"><div class="tn" style="background:rgba(52,211,153,.45)">T3</div><div><div class="td">8-Agent Pipeline</div><div class="ts">Intent → Plan → Schema → SQLGen → Validate → Execute → Pattern → Report</div></div></div>
+        <div class="tier"><div class="tn" style="background:rgba(244,114,182,.42)">T4</div><div><div class="td">Infrastructure Services</div><div class="ts">DatabaseManager · SchemaMetadata · HF SQLGenerator · Chart · Analytics · Export</div></div></div>
+        <div class="callout" style="font-size:9px"><strong>Two data modes:</strong> built-in retail warehouse &amp; user-uploaded CSV. &nbsp;<strong>Two LLM modes:</strong> HF API + rule-based fallback.</div>
+      </div>
+      <div class="ci"><img src="figs/diagram-1.png" alt="Architecture" class="img-panel"></div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>3 / 15</span></div>
+</div>
+
+
+<!-- ══ 4 — PIPELINE ══ -->
+<div class="slide">
+  <div class="sh"><h2>Eight-Agent Pipeline</h2><span class="badge">Sequential · Error-Feedback Retry</span></div>
+  <div class="sb">
+    <div class="cols c55" style="flex:1">
+      <div class="col">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;flex:1">
+          <div class="ac"><div class="an">STAGE 1</div><div class="anm">IntentAgent</div><div class="ad">anomaly / trend / segment / compare / summary</div></div>
+          <div class="ac"><div class="an">STAGE 2</div><div class="anm">PlanningAgent</div><div class="ad">4-step structured analysis plan</div></div>
+          <div class="ac"><div class="an">STAGE 3</div><div class="anm">SchemaAgent</div><div class="ad">schema context + column glossary</div></div>
+          <div class="ac"><div class="an">STAGE 4</div><div class="anm">SQLGenerationAgent</div><div class="ad">HF Inference API or rule-based fallback</div></div>
+          <div class="ac"><div class="an">STAGE 5</div><div class="anm">SQLValidationAgent</div><div class="ad">keyword blocklist + sqlglot AST</div></div>
+          <div class="ac"><div class="an">STAGE 6</div><div class="anm">ExecutionAgent</div><div class="ad">EXPLAIN → query → DataFrame</div></div>
+          <div class="ac"><div class="an">STAGE 7</div><div class="anm">PatternDiscoveryAgent</div><div class="ad">anomalies · trend % · chart spec</div></div>
+          <div class="ac"><div class="an">STAGE 8</div><div class="anm">ReportAgent</div><div class="ad">plain-English summary of findings</div></div>
+        </div>
+        <div class="callout">
+          <strong>Retry loop:</strong> on error → inject error + column list → retry 2× → rule-based fallback on exhaustion
+        </div>
+      </div>
+      <div class="ci"><img src="figs/diagram-2.png" alt="Pipeline Flowchart" class="img-panel"></div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>4 / 15</span></div>
+</div>
+
+
+<!-- ══ 5 — DATABASE ══ -->
+<div class="slide">
+  <div class="sh"><h2>Database Design — Retail Star Schema</h2><span class="badge">Kimball Dimensional Model</span></div>
+  <div class="sb">
+    <div class="cols c2nw" style="flex:1">
+      <div class="ci"><img src="figs/diagram-3.png" alt="ER Diagram" class="img-panel"></div>
+      <div class="col" style="justify-content:center;gap:5px">
+        <div class="sub">Dimension Tables</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+          <div class="stat"><div class="num">6K</div><div class="lbl">dim_customer</div><div class="desc">loyalty, segment</div></div>
+          <div class="stat"><div class="num g3">300</div><div class="lbl">dim_product</div><div class="desc">category, brand</div></div>
+          <div class="stat"><div class="num sm">1,096</div><div class="lbl">dim_date</div><div class="desc">year, quarter, month</div></div>
+          <div class="stat"><div class="num g2 sm">54</div><div class="lbl">region + channel</div><div class="desc">market tier</div></div>
+        </div>
+        <div class="sub em" style="margin-top:4px">Fact Tables</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div class="glass sm" style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:10px;font-weight:600;color:var(--tx)">fact_orders</span><span class="tag em">100K+ rows</span></div>
+          <div class="glass sm" style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:10px;font-weight:600;color:var(--tx)">fact_order_items</span><span class="tag sk">300K+ rows</span></div>
+          <div class="glass sm" style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:10px;font-weight:600;color:var(--tx)">fact_returns</span><span class="tag am">10K+ rows</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>5 / 15</span></div>
+</div>
+
+
+<!-- ══ 6 — SQL GEN & SAFETY ══ -->
+<div class="slide">
+  <div class="sh"><h2>SQL Generation &amp; Safety Validation</h2></div>
+  <div class="sb">
+    <div class="cols c2" style="flex:1">
+      <div class="col">
+        <div class="sub">LLM Mode — HuggingFace Inference API</div>
+        <ul class="bul">
+          <li>Model: <code style="font-size:8.5px;background:rgba(129,140,248,.13);padding:1px 4px;border-radius:3px;color:var(--in)">Qwen/Qwen2.5-Coder-7B-Instruct</code></li>
+          <li>Prompt: schema + glossary + NL question + plan + SQLite rules</li>
+          <li>JSON output: <code style="font-size:8.5px;color:var(--mu)">sql · chart_hint · tables_used</code></li>
+          <li>4-level parse fallback: fence → regex → partial JSON</li>
+        </ul>
+        <div class="sub sk" style="margin-top:6px">Rule-Based Fallback (Offline)</div>
+        <table>
+          <tr><th>Pattern</th><th>Trigger Keywords</th></tr>
+          <tr><td>Top-N Aggregation</td><td>"top", "product"</td></tr>
+          <tr><td>Time-Series Trend</td><td>"monthly", "trend"</td></tr>
+          <tr><td>Returns by Region</td><td>"return", "region"</td></tr>
+          <tr><td>Segmentation</td><td>"segment", "cluster"</td></tr>
+          <tr><td>Generic Aggregation</td><td>(default)</td></tr>
+        </table>
+      </div>
+      <div class="col" style="justify-content:center;gap:5px">
+        <div class="sub">3-Layer SQL Safety</div>
+        <div class="layer l1"><div class="lh"><div class="ln">1</div>DML / DDL Keyword Blocklist</div><div class="lb2">INSERT · UPDATE · DELETE · DROP · ALTER · CREATE · GRANT · TRUNCATE · MERGE</div></div>
+        <div class="layer l2"><div class="lh"><div class="ln">2</div>Dangerous Function Blocklist</div><div class="lb2">pg_sleep · dblink · copy</div></div>
+        <div class="layer l3"><div class="lh"><div class="ln">3</div>AST-Based SELECT-Only Enforcement</div><div class="lb2">sqlglot parses SQL (SQLite dialect). Root must be SELECT or WITH. Rejects semicolons.</div></div>
+        <div class="callout" style="font-size:9px"><strong>EXPLAIN pre-check</strong> — catches plan-time errors before any data is accessed.</div>
+      </div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>6 / 15</span></div>
+</div>
+
+
+<!-- ══ 7 — CSV INGESTION ══ -->
+<div class="slide">
+  <div class="sh"><h2>Automated CSV Ingestion Pipeline</h2><span class="badge">7 Steps · Auto Star Schema</span></div>
+  <div class="sb">
+    <div style="flex:0 0 185px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+      <img src="figs/diagram-4.png" alt="CSV Pipeline" style="max-width:100%;max-height:100%;object-fit:contain">
+    </div>
+    <div class="cols c2" style="flex:1">
+      <div class="col">
+        <div class="sub">Column Role Detection</div>
+        <ul class="bul">
+          <li><span class="tag in">ID</span>&nbsp; <code style="font-size:8.5px">*_id, *_key, *_code</code></li>
+          <li><span class="tag em">Date</span>&nbsp; datetime dtype or <code style="font-size:8.5px">*date*, *time*</code></li>
+          <li><span class="tag sk">Measure</span>&nbsp; numeric + <code style="font-size:8.5px">*revenue*, *amount*</code></li>
+          <li><span class="tag pk">Dimension</span>&nbsp; cardinality ≤ min(50, 5%) + hint</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="sub sk">Blueprint Output</div>
+        <ul class="bul">
+          <li class="sk">Fact table containing all columns</li>
+          <li class="sk">One dim lookup per qualifying categorical column</li>
+          <li class="sk">Orchestrator scoped via <code style="font-size:8.5px">set_active_blueprint()</code></li>
+          <li class="sk">Built-in warehouse tables hidden from schema context</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>7 / 15</span></div>
+</div>
+
+
+<!-- ══ 8 — CHART LOGIC ══ -->
+<div class="slide">
+  <div class="sh"><h2>Chart Type Logic &amp; Pattern Discovery</h2></div>
+  <div class="sb">
+    <div class="cols c2" style="flex:1">
+      <div class="ci"><img src="figs/diagram-5.png" alt="Chart Logic" class="img-panel"></div>
+      <div class="col" style="justify-content:center;gap:5px">
+        <div class="sub">Pattern Discovery</div>
+        <div class="glass sm">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-size:10px;font-weight:700;color:var(--tx)">Anomaly Detection</span><span class="tag pk">Z-Score</span></div>
+          <div style="font-size:9px;color:var(--mu)">Flag |z| ≥ 1.75 on first numeric col. Requires ≥ 5 rows.</div>
+        </div>
+        <div class="glass sm">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-size:10px;font-weight:700;color:var(--tx)">Trend Quantification</span><span class="tag sk">Δ%</span></div>
+          <div style="font-size:9px;color:var(--mu)">Δ% = (v<sub>last</sub>−v<sub>first</sub>) / v<sub>first</sub> × 100 · date col + ≥3 rows</div>
+        </div>
+        <div class="glass sm">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-size:10px;font-weight:700;color:var(--tx)">Cluster Hint</span><span class="tag em">k-means</span></div>
+          <div style="font-size:9px;color:var(--mu)">Suggests k-means / DBSCAN when ≥2 numeric cols + ≥12 rows.</div>
+        </div>
+        <div style="font-size:8.5px;color:var(--dm);font-style:italic">▸ Auto-bucket to monthly when line chart &gt;50 unique x-values</div>
+      </div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>8 / 15</span></div>
+</div>
+
+
+<!-- ══ 9 — TECH STACK ══ -->
+<div class="slide">
+  <div class="sh"><h2>Technology Stack</h2></div>
+  <div class="sb">
+    <div class="bento b12" style="flex:1">
+      <div class="bt"><div class="btl">Streamlit</div><div class="bts">Web UI</div><span class="btb" style="background:rgba(255,75,75,.13);color:#ff6b6b;border:1px solid rgba(255,75,75,.26)">UI</span></div>
+      <div class="bt"><div class="btl">SQLAlchemy</div><div class="bts">DB abstraction</div><span class="btb" style="background:rgba(129,140,248,.13);color:var(--in);border:1px solid rgba(129,140,248,.26)">DB</span></div>
+      <div class="bt"><div class="btl">Qwen2.5-Coder</div><div class="bts">SQL generation</div><span class="btb" style="background:rgba(244,114,182,.12);color:var(--pk);border:1px solid rgba(244,114,182,.26)">LLM</span></div>
+      <div class="bt"><div class="btl">HuggingFace Hub</div><div class="bts">Inference API</div><span class="btb" style="background:rgba(244,114,182,.12);color:var(--pk);border:1px solid rgba(244,114,182,.26)">LLM</span></div>
+      <div class="bt"><div class="btl">sqlglot</div><div class="bts">AST SQL parsing</div><span class="btb" style="background:rgba(52,211,153,.11);color:var(--em);border:1px solid rgba(52,211,153,.26)">Safety</span></div>
+      <div class="bt"><div class="btl">pandas</div><div class="bts">Data processing</div><span class="btb" style="background:rgba(56,189,248,.11);color:var(--sk);border:1px solid rgba(56,189,248,.26)">Data</span></div>
+      <div class="bt"><div class="btl">Plotly Express</div><div class="bts">Interactive charts</div><span class="btb" style="background:rgba(56,189,248,.11);color:var(--sk);border:1px solid rgba(56,189,248,.26)">Viz</span></div>
+      <div class="bt"><div class="btl">scikit-learn</div><div class="bts">IsolationForest</div><span class="btb" style="background:rgba(251,191,36,.11);color:var(--am);border:1px solid rgba(251,191,36,.26)">ML</span></div>
+      <div class="bt"><div class="btl">ReportLab</div><div class="bts">PDF export</div><span class="btb" style="background:rgba(129,140,248,.13);color:var(--in);border:1px solid rgba(129,140,248,.26)">Export</span></div>
+      <div class="bt"><div class="btl">xlsxwriter</div><div class="bts">Excel export</div><span class="btb" style="background:rgba(129,140,248,.13);color:var(--in);border:1px solid rgba(129,140,248,.26)">Export</span></div>
+      <div class="bt"><div class="btl">Faker</div><div class="bts">Synthetic data</div><span class="btb" style="background:rgba(52,211,153,.11);color:var(--em);border:1px solid rgba(52,211,153,.26)">Data</span></div>
+      <div class="bt"><div class="btl">python-dotenv</div><div class="bts">Config / env vars</div><span class="btb" style="background:rgba(56,189,248,.11);color:var(--sk);border:1px solid rgba(56,189,248,.26)">Config</span></div>
+    </div>
+    <div class="callout" style="font-size:9px"><strong>CPU-only</strong> · no GPU required &nbsp;|&nbsp; <strong>Fully offline</strong> via rule-based fallback &nbsp;|&nbsp; SQLite default · PostgreSQL switchable via <code>DATABASE_URL</code></div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>9 / 15</span></div>
+</div>
+
+
+<!-- ══ 10 — TESTING ══ -->
+<div class="slide">
+  <div class="sh"><h2>Testing Overview</h2><span class="badge">22 Tests · 5 Modules</span></div>
+  <div class="sb">
+    <div class="cols c2" style="flex:1">
+      <div class="col">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+          <div class="glass" style="grid-column:span 2;display:flex;align-items:center;gap:12px">
+            <div style="font-size:36px;font-weight:900;line-height:1;background:var(--g1);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">22</div>
+            <div><div style="color:var(--tx);font-weight:700;font-size:11px">Total Test Cases</div><div style="color:var(--mu);font-size:9px">5 modules · PYTHONPATH=src pytest tests/</div></div>
+          </div>
+          <div class="glass sm"><div style="color:var(--in);font-weight:700;font-size:9.5px">test_sql_validator</div><span class="tag in" style="margin-top:3px">5 tests</span></div>
+          <div class="glass sm"><div style="color:var(--sk);font-weight:700;font-size:9.5px">test_fallback_generator</div><span class="tag sk" style="margin-top:3px">2 tests</span></div>
+          <div class="glass sm"><div style="color:var(--pk);font-weight:700;font-size:9.5px">test_charting</div><span class="tag pk" style="margin-top:3px">4 tests</span></div>
+          <div class="glass sm"><div style="color:var(--em);font-weight:700;font-size:9.5px">test_analytics</div><span class="tag em" style="margin-top:3px">3 tests</span></div>
+          <div class="glass sm" style="grid-column:span 2"><div style="color:var(--am);font-weight:700;font-size:9.5px">test_csv_ingestion</div><span class="tag am" style="margin-top:3px">8 tests</span></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="sub em">Key Verifications</div>
+        <ul class="bul">
+          <li class="em">DELETE / DROP / INSERT correctly rejected</li>
+          <li class="em">Multi-statement semicolons rejected</li>
+          <li>Fallback top-N: ORDER BY DESC LIMIT 10 ✓</li>
+          <li>Fallback trend: strftime('%Y-%m') present ✓</li>
+          <li class="sk">Anomaly |z| ≥ 1.75 triggers outlier flag ✓</li>
+          <li class="sk">Trend direction correctly detected ✓</li>
+          <li>order_id → ID (not measure) ✓</li>
+          <li>revenue → measure · low-cardinality → dimension ✓</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>10 / 15</span></div>
+</div>
+
+
+<!-- ══ 11 — UI DESIGN ══ -->
+<div class="slide">
+  <div class="sh"><h2>Application Interface Design</h2><span class="badge">Two-Tab Layout</span></div>
+  <div class="sb">
+    <div class="cols c55" style="flex:1">
+      <div class="ci"><img src="figs/diagram-6.png" alt="UI Design" class="img-panel"></div>
+      <div class="col" style="justify-content:center;gap:5px">
+        <div class="sub">Tab 1 — Upload &amp; Process</div>
+        <ul class="bul">
+          <li>CSV upload with multi-encoding detection</li>
+          <li>Animated 5-step ingestion progress bar</li>
+          <li>Schema blueprint: fact table + color-coded column pills</li>
+          <li>Dimension table cards with source column references</li>
+        </ul>
+        <div class="sub sk" style="margin-top:6px">Tab 2 — Query Warehouse</div>
+        <ul class="bul">
+          <li class="sk">Collapsible schema browser + 5 quick prompts</li>
+          <li class="sk">Free-text question input → Run Analysis</li>
+          <li class="sk">Results: plan · SQL · table · Plotly chart</li>
+          <li class="sk">3 download buttons: CSV · XLSX · PDF</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>11 / 15</span></div>
+</div>
+
+
+<!-- ══ 12 — DEMO STEP 1 ══ -->
+<div class="slide">
+  <div class="sh"><h2>System Demo — Step 1: Data Ingestion</h2><span class="badge">Live Screenshot</span></div>
+  <div class="sb">
+    <div class="sg" style="flex:1">
+      <div class="sc"><div class="sl">CSV File Selected — Ready to Process</div><img src="figs/csv-upload.png" alt="Upload" style="flex:1;min-height:0"></div>
+      <div class="sc"><div class="sl">Schema Generation — 9,977 rows · 7 Dimension Tables Built</div><img src="figs/schema-prep.png" alt="Schema" style="flex:1;min-height:0"></div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>12 / 15</span></div>
+</div>
+
+
+<!-- ══ 13 — DEMO STEP 2 ══ -->
+<div class="slide">
+  <div class="sh"><h2>System Demo — Step 2: Query Interface &amp; Results</h2><span class="badge">Live Screenshot</span></div>
+  <div class="sb">
+    <div class="sg" style="flex:1">
+      <div class="sc"><div class="sl">Natural Language Question + Quick Prompts</div><img src="figs/screen-query.png" alt="Query" style="flex:1;min-height:0"></div>
+      <div class="sc"><div class="sl">Agent Plan · Generated SQL · Results Table</div><img src="figs/results.png" alt="Results" style="flex:1;min-height:0"></div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>13 / 15</span></div>
+</div>
+
+
+<!-- ══ 14 — CONCLUSION ══ -->
+<div class="slide">
+  <div class="sh"><h2>Conclusion &amp; Future Work</h2></div>
+  <div class="sb">
+    <div class="cols c2" style="flex:1">
+      <div class="col">
+        <div class="sub em">Achieved</div>
+        <div class="ci-wrap">
+          <div class="ci-item"><div class="ci-dot ok">✓</div><div class="ci-txt">End-to-end NL → SQL → pattern discovery → export pipeline</div></div>
+          <div class="ci-item"><div class="ci-dot ok">✓</div><div class="ci-txt">8 agents with error-feedback retry loop (up to 2×)</div></div>
+          <div class="ci-item"><div class="ci-dot ok">✓</div><div class="ci-txt">100% availability: LLM API + deterministic rule-based fallback</div></div>
+          <div class="ci-item"><div class="ci-dot ok">✓</div><div class="ci-txt">Automated CSV-to-star-schema — 7 sequential steps</div></div>
+          <div class="ci-item"><div class="ci-dot ok">✓</div><div class="ci-txt">3-layer SQL safety — no DML reaches the database</div></div>
+          <div class="ci-item"><div class="ci-dot ok">✓</div><div class="ci-txt">22 automated tests · 5 independent modules</div></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="sub sk">Future Directions</div>
+        <div class="ci-wrap">
+          <div class="ci-item"><div class="ci-dot ar">→</div><div class="ci-txt">Local 4-bit quantised LLM — no API token needed</div></div>
+          <div class="ci-item"><div class="ci-dot ar">→</div><div class="ci-txt">Dense-embedding schema linking with fine-tuned BERT</div></div>
+          <div class="ci-item"><div class="ci-dot ar">→</div><div class="ci-txt">Multi-turn conversational analytics</div></div>
+          <div class="ci-item"><div class="ci-dot ar">→</div><div class="ci-txt">Formal Spider NL-to-SQL benchmark evaluation</div></div>
+          <div class="ci-item"><div class="ci-dot ar">→</div><div class="ci-txt">Multi-user deployment with session isolation &amp; auth</div></div>
+          <div class="ci-item"><div class="ci-dot ar">→</div><div class="ci-txt">Voice input via OpenAI Whisper</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="qbox" style="flex-shrink:0">
+      <div class="ql" style="color:var(--in)">Key Takeaway</div>
+      <div class="qt"><strong>Multi-agent architectures</strong> with explicit safety enforcement and schema grounding deliver reliable NL-to-SQL analytics without compromising warehouse integrity.</div>
+    </div>
+  </div>
+  <div class="sf"><span>SRMAP University</span><span>14 / 15</span></div>
+</div>
+
+
+<!-- ══ 15 — THANK YOU ══ -->
+<div class="slide ty">
+  <div class="tyb">
+    <h1>Thank You</h1>
+    <div class="tyd"></div>
+    <div class="q">Questions &amp; Discussion</div>
+    <div class="team">
+      <div class="tyc"><div class="nm">Rapolu Eswara Balu</div><div class="rl">AP25122040002</div></div>
+      <div class="tyc"><div class="nm">Alapati Venkata Rayudu</div><div class="rl">AP25122040029</div></div>
+    </div>
+    <div class="gy">Guide &nbsp;·&nbsp; <strong style="color:#e2e8f0">Sourav Kumar Purohit</strong></div>
+    <div class="gy2">Dept. of AI &amp; ML &nbsp;·&nbsp; SRMAP University, Amaravathi, Andhra Pradesh</div>
+  </div>
+</div>
+
+
+</div><!-- #canvas -->
+</div><!-- #shell -->
+
+<div id="nav"><button id="bp">&#8592;</button><button id="bn">&#8594;</button></div>
+<div id="ctr">1 / 15</div>
+<div id="hint">← → Space · F fullscreen · Ctrl+P save PDF</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('canvas');
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total  = slides.length;
+  const pf  = document.getElementById('pf');
+  const ctr = document.getElementById('ctr');
+  let cur = 0, lock = false;
+
+  /* ── scale canvas to fit viewport ── */
+  function resize(){
+    const s = Math.min(window.innerWidth / 960, window.innerHeight / 540);
+    canvas.style.transform = 'scale(' + s + ')';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ── navigation ── */
+  function go(n){
+    if(lock || n === cur) return;
+    lock = true;
+    slides[cur].classList.add('bx');
+    slides[cur].classList.remove('active');
+    cur = ((n % total) + total) % total;
+    slides[cur].classList.remove('bx');
+    slides[cur].classList.add('active');
+    pf.style.width  = ((cur + 1) / total * 100).toFixed(2) + '%';
+    ctr.textContent = (cur + 1) + ' / ' + total;
+    setTimeout(()=>{ lock = false; }, 360);
+  }
+
+  document.getElementById('bn').onclick = ()=> go(cur + 1);
+  document.getElementById('bp').onclick = ()=> go(cur - 1);
+
+  document.addEventListener('keydown', e => {
+    if(['ArrowRight','Space','PageDown'].includes(e.code)){ e.preventDefault(); go(cur + 1); }
+    if(['ArrowLeft','PageUp'].includes(e.code))          { e.preventDefault(); go(cur - 1); }
+    if(e.code === 'KeyF'){
+      document.fullscreenElement
+        ? document.exitFullscreen()
+        : document.documentElement.requestFullscreen().catch(()=>{});
+    }
+  });
+
+  let tx = 0;
+  document.addEventListener('touchstart', e=>{ tx = e.touches[0].clientX; },{ passive:true });
+  document.addEventListener('touchend',   e=>{
+    const dx = e.changedTouches[0].clientX - tx;
+    if(Math.abs(dx) > 50){ dx < 0 ? go(cur+1) : go(cur-1); }
+  },{ passive:true });
+
+  document.getElementById('canvas').addEventListener('click', e=>{
+    if(e.target.closest('#nav')) return;
+    e.clientX > window.innerWidth / 2 ? go(cur+1) : go(cur-1);
+  });
+
+  /* ── PRINT: flatten all slides into linear flow ───────── */
+  const shell = document.getElementById('shell');
+
+  window.addEventListener('beforeprint', ()=>{
+    /* 1. Flatten shell + canvas so slides stack vertically */
+    shell.style.cssText =
+      'display:block;width:960px;height:auto;overflow:visible;background:#0d1117';
+    canvas.style.cssText =
+      'width:960px;height:auto;transform:none;position:static;display:block;overflow:visible';
+
+    /* 2. Make every slide a static, full-size block with page break */
+    slides.forEach((s, i)=>{
+      s.style.cssText = [
+        'position:static',
+        'opacity:1',
+        'transform:none',
+        'display:flex',
+        'width:960px',
+        'height:540px',
+        'overflow:hidden',
+        'break-inside:avoid',
+        'page-break-inside:avoid',
+        i < slides.length - 1
+          ? 'break-after:page;page-break-after:always'
+          : 'break-after:avoid;page-break-after:avoid'
+      ].join(';');
+    });
+  });
+
+  window.addEventListener('afterprint', ()=>{
+    /* Restore interactive layout */
+    shell.style.cssText  = '';
+    canvas.style.cssText = '';
+    slides.forEach((s, i)=>{
+      s.style.cssText = '';
+      s.classList.remove('active','bx');
+      if(i === cur) s.classList.add('active');
+    });
+    resize(); /* re-apply scale */
+  });
+
+})();
+</script>
+</body>
+</html>
