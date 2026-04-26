@@ -14,7 +14,7 @@ SQL_SYSTEM_PROMPT = (
 
 SQL_USER_TEMPLATE = dedent(
     """
-    Database schema (SQLite 3):
+    Database schema (SQLite 3) — these are the ONLY valid tables and columns:
     {schema_context}
 
     User question: {question}
@@ -22,24 +22,26 @@ SQL_USER_TEMPLATE = dedent(
     Analysis hints:
     {analysis_plan}
 
-    SQLite-only syntax rules (strictly enforced):
-    - Use exact table and column names from the schema — no aliases for table names.
-    - Single SELECT statement only. No INSERT / UPDATE / DELETE / DDL.
-    - Dates: use  strftime('%Y', col)  strftime('%m', col)  strftime('%Y-%m', col)
-      NEVER use EXTRACT(), DATE_TRUNC(), or TO_DATE().
-    - Type cast: use  CAST(x AS INTEGER)  not  x::integer  or  x::text.
-    - String comparison: use  LIKE  (SQLite LIKE is case-insensitive) — no ILIKE.
-    - No window functions (ROW_NUMBER OVER, RANK OVER) unless column exists.
-    - Use LIMIT only when ranking or top-N output is requested.
-    - Set "needs_summary" to true ONLY when the user explicitly asks for a
-      summary, explanation, or interpretation of the results.
+    CRITICAL — query will be rejected if you violate these rules:
+    1. Use ONLY table names and column names that appear verbatim in the schema above.
+       Do NOT invent table names. Do NOT invent column names. If unsure, query the fact
+       table directly with SELECT * LIMIT 5 to check what exists.
+    2. Single SELECT statement only. No INSERT / UPDATE / DELETE / DDL / EXPLAIN.
+    3. Date functions: strftime('%Y', col)  strftime('%m', col)  strftime('%Y-%m', col)
+       NEVER EXTRACT(), DATE_TRUNC(), or TO_DATE().
+    4. Type cast: CAST(x AS INTEGER) — never x::integer or x::text.
+    5. String matching: LIKE (case-insensitive in SQLite) — never ILIKE.
+    6. No window functions (ROW_NUMBER OVER, RANK OVER).
+    7. LIMIT only for top-N / ranking queries.
+    8. Output clean SQL inside the JSON — no ANSI codes, no markdown, no comments.
+    9. "needs_summary": true ONLY when the user explicitly asks for a summary or explanation.
 
-    Respond with ONLY valid JSON — no markdown fences, no extra text:
+    Respond with ONLY valid JSON — no markdown fences, no extra text outside the JSON:
     {{
       "plan": ["step 1", "step 2"],
       "sql": "SELECT ...",
       "analysis_goal": "one-sentence description",
-      "tables_used": ["table_name"],
+      "tables_used": ["exact_table_name"],
       "chart_hint": "line|bar|scatter|table",
       "needs_summary": false
     }}

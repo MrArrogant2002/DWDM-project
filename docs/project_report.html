@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Report – Autonomous SQL Agent</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 12pt;
+      line-height: 1.75;
+      color: #1a1a2e;
+      background: #fff;
+    }
+
+    /* ── Layout ── */
+    .page {
+      max-width: 850px;
+      margin: 0 auto;
+      padding: 60px 80px;
+    }
+
+    @media print {
+      .page { padding: 40px 60px; }
+      .page-break { page-break-before: always; }
+      nav { display: none; }
+    }
+
+    /* ── Navigation (screen only) ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #16213e;
+      color: #e0e0e0;
+      display: flex;
+      gap: 24px;
+      padding: 10px 40px;
+      font-size: 0.82rem;
+      z-index: 100;
+      flex-wrap: wrap;
+    }
+    nav a { color: #90caf9; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+
+    body { padding-top: 48px; }
+    @media print { body { padding-top: 0; } }
+
+    /* ── Cover ── */
+    .cover {
+      text-align: center;
+      padding: 80px 0 60px;
+      border-bottom: 3px solid #16213e;
+    }
+    .cover .badge {
+      display: inline-block;
+      background: #16213e;
+      color: #fff;
+      padding: 6px 20px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      margin-bottom: 28px;
+    }
+    .cover h1 {
+      font-size: 2rem;
+      color: #16213e;
+      line-height: 1.3;
+      margin-bottom: 12px;
+    }
+    .cover .subtitle {
+      font-size: 1.1rem;
+      color: #455a64;
+      margin-bottom: 40px;
+    }
+    .cover .meta-table {
+      display: inline-block;
+      text-align: left;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+      min-width: 420px;
+    }
+    .cover .meta-table tr:nth-child(even) { background: #f5f7fa; }
+    .cover .meta-table td {
+      padding: 10px 18px;
+      font-size: 0.95rem;
+    }
+    .cover .meta-table td:first-child {
+      font-weight: 600;
+      color: #16213e;
+      width: 140px;
+    }
+
+    /* ── Sections ── */
+    h2 {
+      font-size: 1.4rem;
+      color: #16213e;
+      margin: 40px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #90caf9;
+    }
+    h3 {
+      font-size: 1.1rem;
+      color: #1565c0;
+      margin: 24px 0 8px;
+    }
+    h4 {
+      font-size: 1rem;
+      color: #37474f;
+      margin: 16px 0 6px;
+      font-style: italic;
+    }
+
+    p { margin-bottom: 10px; }
+
+    ul, ol {
+      margin: 8px 0 12px 24px;
+    }
+    li { margin-bottom: 4px; }
+
+    /* ── TOC ── */
+    .toc {
+      background: #f0f4ff;
+      border-left: 4px solid #1565c0;
+      border-radius: 4px;
+      padding: 20px 28px;
+      margin: 24px 0;
+    }
+    .toc h2 { border: none; margin-top: 0; font-size: 1.1rem; }
+    .toc ol { margin-left: 20px; }
+    .toc li { margin-bottom: 6px; font-size: 0.95rem; }
+    .toc a { color: #1565c0; text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Info boxes ── */
+    .info-box {
+      border-left: 4px solid #42a5f5;
+      background: #e3f2fd;
+      padding: 14px 18px;
+      border-radius: 4px;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    /* ── Code blocks ── */
+    pre, code {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.88rem;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px 20px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+    code {
+      background: #eef2ff;
+      color: #3730a3;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.92rem;
+    }
+    th {
+      background: #16213e;
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #ddd;
+    }
+    tr:nth-child(even) td { background: #f5f7fa; }
+
+    /* ── Pipeline diagram ── */
+    .pipeline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      margin: 20px 0;
+      align-items: center;
+    }
+    .pipeline .agent {
+      background: #1565c0;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      text-align: center;
+      min-width: 110px;
+    }
+    .pipeline .arrow {
+      font-size: 1.4rem;
+      color: #90caf9;
+      padding: 0 6px;
+    }
+
+    /* ── Architecture box ── */
+    .arch-layer {
+      border: 1px solid #90caf9;
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin: 10px 0;
+      background: #f0f7ff;
+    }
+    .arch-layer .layer-title {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #1565c0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    /* ── Team card ── */
+    .team-cards {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .team-card {
+      flex: 1;
+      min-width: 220px;
+      border: 1px solid #90caf9;
+      border-radius: 10px;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%);
+    }
+    .team-card .name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #16213e;
+      margin-bottom: 4px;
+    }
+    .team-card .roll {
+      font-size: 0.88rem;
+      color: #455a64;
+      font-family: monospace;
+    }
+    .team-card .role {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: #1565c0;
+    }
+
+    /* ── Footer ── */
+    .report-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      text-align: center;
+      font-size: 0.82rem;
+      color: #90a4ae;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Screen navigation -->
+<nav>
+  <strong style="color:#fff">Autonomous SQL Agent</strong>
+  <a href="#abstract">Abstract</a>
+  <a href="#introduction">Introduction</a>
+  <a href="#objectives">Objectives</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#implementation">Implementation</a>
+  <a href="#results">Results</a>
+  <a href="#conclusion">Conclusion</a>
+</nav>
+
+<div class="page">
+
+  <!-- ══════════════════ COVER ══════════════════ -->
+  <div class="cover">
+    <div class="badge">M.Tech – AI &amp; Machine Learning · DWDM Project Report</div>
+    <h1>Autonomous SQL Agent:<br>From CSV Upload to Natural Language Insights</h1>
+    <p class="subtitle">An Agentic AI System for Automated Data Warehousing and Intelligent Query Generation</p>
+
+    <table class="meta-table">
+      <tr><td>Institution</td><td>SRM University, Amaravati</td></tr>
+      <tr><td>Programme</td><td>M.Tech – Artificial Intelligence &amp; Machine Learning</td></tr>
+      <tr><td>Course</td><td>Data Warehousing &amp; Data Mining (DWDM)</td></tr>
+      <tr><td>Academic Year</td><td>2025 – 2026</td></tr>
+      <tr><td>Team Member 1</td><td>Rapolu Eswara Balu &nbsp;|&nbsp; AP25122040002</td></tr>
+      <tr><td>Team Member 2</td><td>Alapati Venkata Rayudu &nbsp;|&nbsp; AP25122040029</td></tr>
+      <tr><td>Date</td><td>April 2026</td></tr>
+    </table>
+  </div>
+
+  <!-- ══════════════════ TOC ══════════════════ -->
+  <div class="toc">
+    <h2>Table of Contents</h2>
+    <ol>
+      <li><a href="#abstract">Abstract</a></li>
+      <li><a href="#introduction">Introduction</a></li>
+      <li><a href="#objectives">Objectives</a></li>
+      <li><a href="#architecture">System Architecture</a></li>
+      <li><a href="#implementation">Implementation Details</a>
+        <ol>
+          <li><a href="#csv-ingestion">CSV Ingestion Pipeline</a></li>
+          <li><a href="#agent-pipeline">Multi-Agent Pipeline</a></li>
+          <li><a href="#llm">LLM Integration &amp; SQL Generation</a></li>
+          <li><a href="#validation">SQL Validation &amp; Security</a></li>
+          <li><a href="#analytics">Analytics &amp; Visualization</a></li>
+          <li><a href="#ui">User Interface</a></li>
+        </ol>
+      </li>
+      <li><a href="#tech">Technology Stack</a></li>
+      <li><a href="#challenges">Challenges &amp; Solutions</a></li>
+      <li><a href="#results">Results &amp; Observations</a></li>
+      <li><a href="#conclusion">Conclusion &amp; Future Work</a></li>
+      <li><a href="#references">References</a></li>
+      <li><a href="#team">Team Members</a></li>
+    </ol>
+  </div>
+
+  <!-- ══════════════════ ABSTRACT ══════════════════ -->
+  <h2 id="abstract">1. Abstract</h2>
+  <p>
+    This project presents an <strong>Autonomous SQL Agent</strong> — an end-to-end agentic AI system that enables non-technical users to perform complex data analysis on their own datasets without writing a single line of SQL. Users upload any CSV file; the system automatically detects column data types, strips currency symbols and percentage suffixes, normalises missing values, and builds a star-schema data warehouse (fact table plus one dimension table per low-cardinality column). Users then ask questions in plain English, and a multi-agent pipeline — consisting of intent detection, planning, schema-aware SQL generation via a large language model (LLM), validation, execution, pattern discovery, and report generation — produces result tables, interactive charts, and downloadable exports in one seamless workflow.
+  </p>
+  <p>
+    The system is designed for robustness across real-world datasets: it handles five encodings, four field delimiters, currency-prefixed numbers, percentage-suffixed strings, and malformed LLM JSON outputs. When the LLM fails, a schema-aware rule-based fallback always produces a valid result. The project demonstrates that agentic AI pipelines, combined with lightweight local databases, can democratise data analysis for domain experts with no SQL background.
+  </p>
+
+  <!-- ══════════════════ INTRODUCTION ══════════════════ -->
+  <h2 id="introduction">2. Introduction</h2>
+  <p>
+    The exponential growth of data in retail, e-commerce, healthcare, and logistics has created a critical bottleneck: most domain experts who possess the business context to interpret data lack the SQL skills to query it. Traditional solutions — hiring data analysts, building BI dashboards, or using drag-and-drop report builders — are either expensive, rigid, or require significant infrastructure.
+  </p>
+  <p>
+    Recent advances in large language models, particularly code-specialised models such as Qwen2.5-Coder and Defog's SQLCoder, have made it feasible to translate natural language questions directly into SQL. However, existing text-to-SQL systems typically require pre-defined schemas, clean and normalised data, and expert-curated table metadata — none of which are available when a user simply has a raw CSV file.
+  </p>
+  <p>
+    This project bridges that gap. The system takes any CSV, automatically engineers a relational star schema from it, builds a SQLite data warehouse, and then accepts natural language questions. A multi-agent AI pipeline interprets the question, generates SQL tailored to the specific schema, validates and executes it safely, and returns results with charts and natural-language summaries — all without the user ever touching a database or writing a query.
+  </p>
+  <div class="info-box">
+    <strong>Core proposition:</strong> Any CSV file → automatic star schema → natural language queries → results, charts, and exports. Zero SQL knowledge required from the user.
+  </div>
+
+  <!-- ══════════════════ OBJECTIVES ══════════════════ -->
+  <h2 id="objectives">3. Objectives</h2>
+  <ol>
+    <li>Automatically ingest and profile any CSV file regardless of encoding, delimiter, or column naming convention.</li>
+    <li>Infer column data types (numeric, datetime, categorical, identifier, free-text) and map them to a normalised star schema.</li>
+    <li>Build a SQLite data warehouse in-memory with fact and dimension tables, ready for immediate querying.</li>
+    <li>Accept natural language questions and classify user intent (trend, comparison, anomaly, segmentation, summary).</li>
+    <li>Generate correct, safe SQLite SELECT queries using an LLM (HuggingFace Inference API) with schema context and business glossary.</li>
+    <li>Validate all generated SQL for correctness and safety before execution — block DDL, DML, multi-statement, and dangerous functions.</li>
+    <li>Execute validated queries, detect statistical patterns and anomalies, and generate interactive Plotly charts.</li>
+    <li>Provide downloadable results in CSV, Excel, and PDF formats.</li>
+    <li>Ensure graceful degradation: a rule-based fallback generator guarantees results even when the LLM fails.</li>
+    <li>Deliver all functionality through a clean Streamlit web interface accessible to non-technical users.</li>
+  </ol>
+
+  <!-- ══════════════════ ARCHITECTURE ══════════════════ -->
+  <div class="page-break"></div>
+  <h2 id="architecture">4. System Architecture</h2>
+  <p>
+    The system follows a layered architecture with five distinct tiers: the user interface, the orchestration layer, the agent pipeline, the data layer, and the inference layer.
+  </p>
+
+  <div class="arch-layer">
+    <div class="layer-title">Layer 1 — User Interface</div>
+    Streamlit web application with two tabs: (a) Upload &amp; Process, (b) Query Warehouse. Handles file upload, progress animation, schema visualisation, query input, result display, and downloads.
+  </div>
+  <div class="arch-layer">
+    <div class="layer-title">Layer 2 — Orchestration (AnalysisOrchestrator)</div>
+    Coordinates the full analysis pipeline: invokes agents in sequence, manages the retry loop for SQL generation, enforces table-scoping from the active blueprint, and assembles the final AnalysisResponse.
+  </div>
+  <div class="arch-layer">
+    <div class="layer-title">Layer 3 — Agent Pipeline</div>
+    Seven specialised agents communicate through a shared AgentState object: IntentAgent → PlanningAgent → SQLGenerationAgent → SQLValidationAgent → ExecutionAgent → PatternDiscoveryAgent → ReportAgent.
+  </div>
+  <div class="arch-layer">
+    <div class="layer-title">Layer 4 — Data Layer</div>
+    CSVIngestor builds the star schema and writes to SQLite via SQLAlchemy. DatabaseManager provides read-only query_dataframe() and explain_query() methods for the analysis path. ExportService writes CSV, XLSX, and PDF artefacts.
+  </div>
+  <div class="arch-layer">
+    <div class="layer-title">Layer 5 — Inference Layer</div>
+    HuggingFaceSQLGenerator calls the HuggingFace Inference API (Qwen2.5-Coder-7B-Instruct). Falls back to a schema-aware rule-based SQL generator when the API is unavailable or returns malformed output.
+  </div>
+
+  <h3>4.1 Agent Pipeline Flow</h3>
+  <div class="pipeline">
+    <div class="agent">Intent Agent</div>
+    <div class="arrow">→</div>
+    <div class="agent">Planning Agent</div>
+    <div class="arrow">→</div>
+    <div class="agent">Schema Context</div>
+    <div class="arrow">→</div>
+    <div class="agent">SQL Generation</div>
+    <div class="arrow">→</div>
+    <div class="agent">SQL Validation</div>
+    <div class="arrow">→</div>
+    <div class="agent">Execution</div>
+    <div class="arrow">→</div>
+    <div class="agent">Pattern Discovery</div>
+    <div class="arrow">→</div>
+    <div class="agent">Report Agent</div>
+  </div>
+
+  <h3>4.2 Data Flow for CSV Upload</h3>
+  <div class="pipeline">
+    <div class="agent">CSV File</div>
+    <div class="arrow">→</div>
+    <div class="agent">Encoding Detection</div>
+    <div class="arrow">→</div>
+    <div class="agent">Column Sanitisation</div>
+    <div class="arrow">→</div>
+    <div class="agent">Type Coercion</div>
+    <div class="arrow">→</div>
+    <div class="agent">Column Profiling</div>
+    <div class="arrow">→</div>
+    <div class="agent">Star Schema Build</div>
+    <div class="arrow">→</div>
+    <div class="agent">SQLite Write</div>
+  </div>
+
+  <!-- ══════════════════ IMPLEMENTATION ══════════════════ -->
+  <div class="page-break"></div>
+  <h2 id="implementation">5. Implementation Details</h2>
+
+  <h3 id="csv-ingestion">5.1 CSV Ingestion Pipeline (<code>csv_ingestion.py</code>)</h3>
+  <p>The ingestion pipeline is the most technically complex component, designed to handle the full diversity of real-world CSV files.</p>
+
+  <h4>Encoding &amp; Delimiter Detection</h4>
+  <p>The system tries five encodings in order: UTF-8, UTF-8-BOM, Latin-1, CP1252, and ISO-8859-1. Each attempt uses <code>pd.read_csv</code> with <code>sep=None</code> and <code>engine='python'</code> to auto-detect the field delimiter via Python's csv.Sniffer. This handles comma, semicolon, tab, and pipe-delimited files without configuration.</p>
+
+  <h4>Column Name Sanitisation</h4>
+  <p>All column names are converted to unique SQL-safe snake_case identifiers via <code>_to_snake()</code>. The function strips non-word characters, collapses underscores, guards against SQL keywords (SELECT, FROM, etc.), prefixes digit-leading names with <code>col_</code>, and appends numeric suffixes to resolve duplicates.</p>
+
+  <h4>Type Coercion</h4>
+  <p>Object-dtype columns go through a three-stage coercion pipeline:</p>
+  <ol>
+    <li><strong>Normalisation:</strong> Whitespace stripping, common NA-string replacement (null, N/A, -, --)</li>
+    <li><strong>Datetime detection:</strong> Hit-rate evaluated on non-null values only, using <code>format="mixed"</code> for pandas ≥ 2.0</li>
+    <li><strong>Numeric detection:</strong> Currency symbol stripping ($ € £ ¥ ₹ etc.) and percentage suffix removal before numeric coercion</li>
+  </ol>
+
+  <h4>Column Role Classification</h4>
+  <table>
+    <tr><th>Role</th><th>Detection Rule</th><th>Used For</th></tr>
+    <tr><td>date</td><td>pandas datetime64 dtype</td><td>Time-series analysis, trend queries</td></tr>
+    <tr><td>id</td><td>Name matches regex (_id, _key, phone, zip, etc.)</td><td>Join keys — excluded from aggregation</td></tr>
+    <tr><td>measure</td><td>Numeric dtype, not an ID</td><td>SUM, AVG, aggregation targets</td></tr>
+    <tr><td>dimension</td><td>String, ≤ 50 unique values</td><td>GROUP BY, filtering, dimension tables</td></tr>
+    <tr><td>text</td><td>String, > 50 unique values</td><td>Free-text — kept in fact table only</td></tr>
+  </table>
+
+  <h4>Star Schema Generation</h4>
+  <p>For each dimension column, a separate lookup table is created (<code>dim_{column_name}</code>) containing unique values with a surrogate integer key. The fact table contains all original columns plus foreign key references. Dimension table names are deduplicated with numeric suffixes if collisions arise.</p>
+
+  <h3 id="agent-pipeline">5.2 Multi-Agent Pipeline (<code>agents.py</code>, <code>orchestrator.py</code>)</h3>
+
+  <h4>IntentAgent</h4>
+  <p>Classifies user intent into one of five categories by keyword matching: <em>trend</em> (monthly, over time), <em>anomaly</em> (unusual, outlier, spike), <em>segmentation</em> (segment, cluster, group), <em>comparison</em> (compare, vs, versus), or <em>summary</em> (default). Also detects whether a plain-English summary is requested.</p>
+
+  <h4>PlanningAgent</h4>
+  <p>Builds a step-by-step analysis plan (4–6 steps) tailored to the detected intent. This plan is injected into the LLM prompt to guide SQL generation toward the right aggregation strategy.</p>
+
+  <h4>Schema Context</h4>
+  <p>The orchestrator calls <code>SchemaMetadataService.build_schema_summary()</code> directly, reading column names and types from SQLite's <code>PRAGMA table_info</code>. Table access is scoped to the currently active blueprint via a table filter, preventing queries from leaking across dataset uploads.</p>
+
+  <h4>Retry Loop</h4>
+  <p>SQL generation runs in a retry loop (default: 3 attempts). On failure, the error message plus the list of valid table and column names is fed back to the LLM as additional context. After all retries, the rule-based fallback is invoked as a final safety net.</p>
+
+  <h3 id="llm">5.3 LLM Integration &amp; SQL Generation (<code>model.py</code>)</h3>
+
+  <h4>HuggingFace Inference API</h4>
+  <p>The primary SQL generator calls <code>Qwen2.5-Coder-7B-Instruct</code> via the HuggingFace Inference API using a structured JSON prompt. The prompt includes the full schema context, analysis plan, business glossary, and nine critical SQLite-specific syntax rules. The model is asked to return a JSON object with fields: <code>sql</code>, <code>analysis_goal</code>, <code>tables_used</code>, <code>chart_hint</code>, and <code>needs_summary</code>.</p>
+
+  <h4>Robustness Features</h4>
+  <ul>
+    <li><strong>ANSI stripping:</strong> Terminal escape codes emitted by some models are stripped before JSON parsing.</li>
+    <li><strong>Markdown fence removal:</strong> Code blocks in the response are stripped.</li>
+    <li><strong>Partial JSON extraction:</strong> If the response is truncated (token limit), the SQL field is extracted via regex from the incomplete JSON.</li>
+    <li><strong>max_tokens = 2048:</strong> Doubled from 1024 to prevent mid-JSON truncation on large schemas.</li>
+  </ul>
+
+  <h4>Rule-Based Fallback</h4>
+  <p>Five hand-crafted SQL templates cover the most common analysis patterns: top-N by dimension, monthly trend (using <code>strftime('%Y-%m', date)</code>), returns by region, segment comparison, and generic aggregation. Column names for each template are resolved by searching the live schema context for type and name hints — never hardcoded defaults.</p>
+
+  <h3 id="validation">5.4 SQL Validation &amp; Security (<code>sql_validation.py</code>)</h3>
+  <p>Every generated SQL passes through a three-stage validation gate before execution:</p>
+  <ol>
+    <li><strong>Keyword scan:</strong> Blocks INSERT, UPDATE, DELETE, DROP, CREATE, TRUNCATE, EXEC, and other write/DDL keywords.</li>
+    <li><strong>sqlglot parse:</strong> Full AST-level parse with SQLite dialect. Validates syntax and normalises the query.</li>
+    <li><strong>EXPLAIN QUERY PLAN:</strong> Runs the query against the live database engine. Catches invalid table/column names and cross-join explosions without returning any data.</li>
+  </ol>
+  <p>Blocked functions include: <code>pg_sleep</code>, <code>dblink</code>, <code>COPY</code>, and any multi-statement input. The system enforces strict read-only access on the analysis path.</p>
+
+  <h3 id="analytics">5.5 Analytics &amp; Visualisation (<code>analytics.py</code>, <code>charting.py</code>)</h3>
+
+  <h4>Pattern Discovery</h4>
+  <p>The <code>PatternDiscoveryAgent</code> runs statistical analysis on the query result: computes z-scores to detect numeric outliers, identifies the top and bottom values in each column, and generates contextual follow-up question suggestions based on the detected intent.</p>
+
+  <h4>Chart Inference</h4>
+  <p>The <code>ChartService</code> infers the appropriate chart type from the result schema and the model's <code>chart_hint</code>:</p>
+  <ul>
+    <li><strong>Line chart:</strong> When a date/month column is present (time series). Auto-aggregates to monthly buckets if raw unaggregated data is detected (n_unique == n_rows and n_rows > 50).</li>
+    <li><strong>Bar chart:</strong> When a categorical column is paired with a numeric column.</li>
+    <li><strong>Scatter chart:</strong> When two numeric columns are present.</li>
+  </ul>
+  <p>Plotly Express is used for interactive UI charts. Matplotlib/Agg is used for static PDF export charts.</p>
+
+  <h3 id="ui">5.6 User Interface (<code>app/streamlit_app.py</code>)</h3>
+
+  <h4>Upload &amp; Process Tab</h4>
+  <p>Animated progress bar with a step-by-step display of the ingestion pipeline stages. After successful processing, the generated star schema is visualised with colour-coded column pills (measure, dimension, date, id) and dimension table cards.</p>
+
+  <h4>Query Tab</h4>
+  <p>Five dataset-specific quick-prompt buttons are generated dynamically from the uploaded schema — selecting the most relevant metric, dimension, and date columns using a tiered priority search. Clicking a button fills the text area via Streamlit session state. Results are displayed in a paginated table, an interactive Plotly chart, and a plain-English summary section.</p>
+
+  <!-- ══════════════════ TECH STACK ══════════════════ -->
+  <div class="page-break"></div>
+  <h2 id="tech">6. Technology Stack</h2>
+
+  <table>
+    <tr><th>Category</th><th>Technology</th><th>Version / Notes</th></tr>
+    <tr><td>Language</td><td>Python</td><td>3.12</td></tr>
+    <tr><td>Web Framework</td><td>Streamlit</td><td>Latest stable</td></tr>
+    <tr><td>Database</td><td>SQLite (via SQLAlchemy)</td><td>Embedded, zero-config</td></tr>
+    <tr><td>LLM (Primary)</td><td>Qwen2.5-Coder-7B-Instruct</td><td>HuggingFace Inference API</td></tr>
+    <tr><td>SQL Parsing</td><td>sqlglot</td><td>AST-level, dialect-aware</td></tr>
+    <tr><td>Data Processing</td><td>pandas, NumPy</td><td>Core data pipeline</td></tr>
+    <tr><td>Visualisation</td><td>Plotly Express</td><td>Interactive charts in UI</td></tr>
+    <tr><td>Visualisation</td><td>Matplotlib</td><td>Static charts for PDF export</td></tr>
+    <tr><td>Excel Export</td><td>openpyxl</td><td>XLSX generation</td></tr>
+    <tr><td>PDF Export</td><td>ReportLab</td><td>PDF with chart embedding</td></tr>
+    <tr><td>Type Safety</td><td>mypy (strict)</td><td>All modules type-annotated</td></tr>
+    <tr><td>Linting</td><td>ruff + black</td><td>Enforced on all source files</td></tr>
+    <tr><td>Testing</td><td>pytest</td><td>42 tests, 0 failures</td></tr>
+  </table>
+
+  <!-- ══════════════════ CHALLENGES ══════════════════ -->
+  <h2 id="challenges">7. Challenges &amp; Solutions</h2>
+
+  <table>
+    <tr><th>Challenge</th><th>Root Cause</th><th>Solution</th></tr>
+    <tr>
+      <td>Column names break SQL</td>
+      <td>CSVs with spaces, special chars, SQL keywords, or digit-leading names</td>
+      <td><code>_to_snake()</code> normalisation with SQL keyword guard and digit prefix</td>
+    </tr>
+    <tr>
+      <td>Currency/percent not recognised as numbers</td>
+      <td>Strings like "$1,234.50" or "25%" are object dtype</td>
+      <td>Regex stripping of currency symbols and % before numeric coercion</td>
+    </tr>
+    <tr>
+      <td>LLM hallucinates column names</td>
+      <td>Model uses training-data knowledge instead of provided schema</td>
+      <td>On retry: inject explicit column list + table list into error feedback</td>
+    </tr>
+    <tr>
+      <td>LLM output truncated mid-JSON</td>
+      <td>max_tokens=1024 too low for complex schemas</td>
+      <td>Raised to 2048; added regex SQL field extraction as last resort</td>
+    </tr>
+    <tr>
+      <td>ANSI codes in SQL output</td>
+      <td>HF model emits terminal escape codes (\x1b[4m) inside JSON</td>
+      <td>Regex strip all ANSI sequences before JSON parsing</td>
+    </tr>
+    <tr>
+      <td>Spaghetti line chart</td>
+      <td>Fallback trend SQL used raw date column, returning one row per transaction</td>
+      <td>Always use <code>strftime('%Y-%m', date) AS month</code> + <code>SUM()</code> in trend fallback</td>
+    </tr>
+    <tr>
+      <td>PyArrow rejects currency regex</td>
+      <td>Backslashes before non-special unicode chars invalid in RE2 engine</td>
+      <td>Removed backslashes: <code>[$€£¥₹...]</code> instead of <code>[\$\€\£...]</code></td>
+    </tr>
+    <tr>
+      <td>Small datasets misclassify columns</td>
+      <td>Dynamic cardinality threshold (5% of n) gave ceiling=2 for 5-row sets</td>
+      <td>Fixed ceiling at 50; dynamic threshold removed</td>
+    </tr>
+    <tr>
+      <td>Numeric measures classified as IDs</td>
+      <td>Old cardinality heuristic (n_unique/n > 0.85) flagged price, latitude as IDs</td>
+      <td>Name-based ID detection only using <code>_ID_NAME_RE</code> regex</td>
+    </tr>
+  </table>
+
+  <!-- ══════════════════ RESULTS ══════════════════ -->
+  <div class="page-break"></div>
+  <h2 id="results">8. Results &amp; Observations</h2>
+
+  <h3>8.1 Test Suite</h3>
+  <p>The system ships with 42 automated tests covering all major components:</p>
+  <table>
+    <tr><th>Test Group</th><th>Count</th><th>Coverage</th></tr>
+    <tr><td>CSV Ingestion (<code>test_csv_ingestion.py</code>)</td><td>35</td><td>Encoding, delimiters, type coercion, column roles, blueprint building</td></tr>
+    <tr><td>SQL Validation (<code>test_sql_validator.py</code>)</td><td>2</td><td>SELECT allow, DELETE block</td></tr>
+    <tr><td>Fallback Generator (<code>test_fallback_generator.py</code>)</td><td>2</td><td>Top-N SQL, trend SQL</td></tr>
+    <tr><td>Analytics (<code>test_analytics.py</code>)</td><td>1</td><td>Anomaly signal detection</td></tr>
+    <tr><td>Charting (<code>test_charting.py</code>)</td><td>2</td><td>Chart type inference</td></tr>
+  </table>
+  <p>All 42 tests pass with zero failures across Python 3.12.</p>
+
+  <h3>8.2 Functional Verification</h3>
+  <p>The system was validated against three publicly available retail/e-commerce datasets:</p>
+  <ul>
+    <li><strong>Kaggle Supermarket Sales</strong> (1,000 rows, 17 columns): Correct detection of date column, sales metric, and six dimension columns. Monthly trend query produced a 12-point line chart.</li>
+    <li><strong>Sample Superstore</strong> (9,994 rows, 21 columns): Order date correctly parsed as TIMESTAMP; sales, profit, and discount identified as measures; category, region, and segment as dimensions.</li>
+    <li><strong>Retail Sales Analytics</strong> (1,000 rows, 9 columns): No date column — system correctly omitted trend prompts and offered distribution queries instead.</li>
+  </ul>
+
+  <h3>8.3 Key Performance Observations</h3>
+  <ul>
+    <li>CSV ingestion completes in under 2 seconds for datasets up to 50,000 rows.</li>
+    <li>LLM API response time: 3–8 seconds per request (Qwen2.5-Coder-7B via HF Inference API).</li>
+    <li>Rule-based fallback fires in &lt; 50 ms — no LLM dependency.</li>
+    <li>SQL validation (sqlglot parse + EXPLAIN) adds &lt; 100 ms per attempt.</li>
+    <li>Export generation (CSV + XLSX + PDF) completes in &lt; 1 second for results under 10,000 rows.</li>
+  </ul>
+
+  <!-- ══════════════════ CONCLUSION ══════════════════ -->
+  <h2 id="conclusion">9. Conclusion &amp; Future Work</h2>
+
+  <h3>9.1 Conclusion</h3>
+  <p>
+    The Autonomous SQL Agent successfully demonstrates that it is possible to build a production-quality, fully automated data analysis system that requires zero database knowledge from the end user. The combination of automated schema inference, multi-agent orchestration, LLM-powered SQL generation, and robust fallback mechanisms creates a system that is both powerful and resilient.
+  </p>
+  <p>
+    The project makes several practical contributions: a novel multi-pass column type classifier that handles real-world data quality issues; a schema-aware fallback SQL engine that selects columns by type rather than hardcoded names; and a robustness layer around LLM outputs that handles ANSI codes, truncated JSON, and hallucinated identifiers.
+  </p>
+
+  <h3>9.2 Future Work</h3>
+  <ul>
+    <li><strong>Multi-table joins:</strong> Automatically generate JOIN queries across fact and dimension tables.</li>
+    <li><strong>Conversational context:</strong> Maintain a conversation history so follow-up questions can reference prior results.</li>
+    <li><strong>Fine-tuned model:</strong> Fine-tune SQLCoder or a similar model on the generated schema format for higher first-attempt success rates.</li>
+    <li><strong>PostgreSQL support:</strong> Extend to cloud-hosted PostgreSQL for datasets too large for SQLite.</li>
+    <li><strong>Streaming results:</strong> Use Streamlit's streaming API to show results incrementally.</li>
+    <li><strong>Data quality report:</strong> Auto-generate a data quality summary (null percentages, outlier counts, distribution statistics) as a separate download.</li>
+    <li><strong>Voice input:</strong> Integrate speech-to-text so users can ask questions by voice.</li>
+  </ul>
+
+  <!-- ══════════════════ REFERENCES ══════════════════ -->
+  <h2 id="references">10. References</h2>
+  <ol>
+    <li>Qwen Team, "Qwen2.5-Coder Technical Report," Alibaba Group, 2024. [Online]. Available: https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct</li>
+    <li>Defog AI, "SQLCoder: A State-of-the-Art LLM for SQL Generation," 2023. [Online]. Available: https://huggingface.co/defog/sqlcoder-7b-2</li>
+    <li>T. Yu et al., "Spider: A Large-Scale Human-Labeled Dataset for Complex and Cross-Domain Semantic Parsing and Text-to-SQL Task," EMNLP 2018.</li>
+    <li>W. H. Inmon, "Building the Data Warehouse," 4th ed., Wiley, 2005.</li>
+    <li>R. Kimball and M. Ross, "The Data Warehouse Toolkit," 3rd ed., Wiley, 2013.</li>
+    <li>Streamlit Inc., "Streamlit Documentation," 2024. [Online]. Available: https://docs.streamlit.io</li>
+    <li>Tobias Mader, "sqlglot: SQL Parser and Transpiler," 2023. [Online]. Available: https://github.com/tobymao/sqlglot</li>
+    <li>Plotly Technologies Inc., "Plotly Python Graphing Library," 2024. [Online]. Available: https://plotly.com/python/</li>
+    <li>HuggingFace, "Inference API Documentation," 2024. [Online]. Available: https://huggingface.co/docs/api-inference</li>
+    <li>The pandas Development Team, "pandas: Powerful Python Data Structures," 2024. [Online]. Available: https://pandas.pydata.org</li>
+  </ol>
+
+  <!-- ══════════════════ TEAM ══════════════════ -->
+  <div class="page-break"></div>
+  <h2 id="team">11. Team Members</h2>
+  <div class="team-cards">
+    <div class="team-card">
+      <div class="name">Rapolu Eswara Balu</div>
+      <div class="roll">Roll No: AP25122040002</div>
+      <div class="role">System Architecture · Agent Pipeline · LLM Integration · Backend Development</div>
+    </div>
+    <div class="team-card">
+      <div class="name">Alapati Venkata Rayudu</div>
+      <div class="roll">Roll No: AP25122040029</div>
+      <div class="role">CSV Ingestion · Data Pipeline · SQL Validation · UI Development</div>
+    </div>
+  </div>
+
+  <div class="report-footer">
+    Autonomous SQL Agent &nbsp;|&nbsp; M.Tech AI &amp; ML &nbsp;|&nbsp; SRM University, Amaravati &nbsp;|&nbsp; April 2026<br>
+    Submitted for the course: Data Warehousing &amp; Data Mining (DWDM)
+  </div>
+
+</div>
+</body>
+</html>

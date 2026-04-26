@@ -104,6 +104,118 @@ def _display_download_button(label: str, path: str | None, mime: str) -> None:
         )
 
 
+def _generate_quick_prompts(bp: SchemaBlueprint) -> list[str]:
+    """Build five dataset-specific natural-language prompts from the schema blueprint."""
+    # Ordered by specificity — earlier entries win over later ones
+    _metric_primary = (
+        "revenue",
+        "sales",
+        "total_amount",
+        "net_amount",
+        "gross_income",
+        "gross_profit",
+    )
+    _metric_secondary = (
+        "total",
+        "amount",
+        "profit",
+        "income",
+        "turnover",
+        "value",
+        "cost",
+    )
+    _metric_fallback = ("price", "quantity", "gross", "tax")
+
+    _dim_primary = (
+        "category",
+        "product_line",
+        "product",
+        "region",
+        "segment",
+        "department",
+    )
+    _dim_secondary = ("type", "status", "brand", "channel", "payment", "line")
+    _dim_fallback = ("city", "state", "country", "gender", "branch")
+
+    def _label(col: str) -> str:
+        return col.replace("_", " ")
+
+    def _best_metric(cols: list[str]) -> str | None:
+        for grp in (_metric_primary, _metric_secondary, _metric_fallback):
+            hit = next((c for c in cols if any(h in c.lower() for h in grp)), None)
+            if hit:
+                return hit
+        return cols[0] if cols else None
+
+    def _best_dim(cols: list[str], exclude: str | None = None) -> str | None:
+        candidates = [c for c in cols if c != exclude]
+        for grp in (_dim_primary, _dim_secondary, _dim_fallback):
+            hit = next(
+                (c for c in candidates if any(h in c.lower() for h in grp)), None
+            )
+            if hit:
+                return hit
+        return candidates[0] if candidates else None
+
+    # ── Pick best columns ───────────────────────────────────────────────
+    metric = _best_metric(bp.measure_columns)
+    dim1 = _best_dim(bp.dimension_columns)
+    dim2 = _best_dim(bp.dimension_columns, exclude=dim1)
+    date = bp.date_columns[0] if bp.date_columns else None
+    tbl = bp.fact_table
+
+    prompts: list[str] = []
+
+    # 1. Top-N ranking (intent → summary / top-N)
+    if metric and dim1:
+        prompts.append(
+            f"Show the top 10 {_label(dim1)} by {_label(metric)} from {tbl}."
+        )
+    elif metric:
+        prompts.append(f"Show the 10 highest {_label(metric)} records from {tbl}.")
+    else:
+        prompts.append(f"Show all columns from {tbl} LIMIT 10.")
+
+    # 2. Time trend (intent → trend; keywords: "monthly", "trend")
+    if date and metric:
+        prompts.append(
+            f"What is the monthly {_label(metric)} trend over {_label(date)}?"
+        )
+    elif date:
+        prompts.append(
+            f"Show how record count changes month by month over {_label(date)}."
+        )
+    else:
+        prompts.append(f"What is the overall distribution of values in {tbl}?")
+
+    # 3. Comparison across primary dimension (intent → comparison; keyword: "compare")
+    if dim1 and metric:
+        prompts.append(
+            f"Compare {_label(metric)} and record count across {_label(dim1)} groups."
+        )
+    elif dim1:
+        prompts.append(f"How many records belong to each {_label(dim1)} category?")
+    else:
+        prompts.append("Summarize the distribution of records across the dataset.")
+
+    # 4. Anomaly in secondary dimension (intent → anomaly; keyword: "unusual")
+    if dim2 and metric:
+        prompts.append(f"Find unusual patterns in {_label(metric)} by {_label(dim2)}.")
+    elif dim1 and metric:
+        prompts.append(
+            f"Which {_label(dim1)} has the highest average {_label(metric)}?"
+        )
+    elif metric:
+        prompts.append(f"Find outliers or unusual values in {_label(metric)}.")
+    else:
+        prompts.append("Find any anomalies or unusual patterns in the data.")
+
+    # 5. Plain-English summary (intent → summary; keyword: "summarize")
+    prompts.append(f"Summarize the key findings from the {tbl} data.")
+
+    return prompts
+
+
 def _run_ingestion(
     uploaded_file, stem: str, config: AppConfig
 ) -> SchemaBlueprint | None:
@@ -210,6 +322,7 @@ def main() -> None:
                 if blueprint:
                     st.session_state["blueprint"] = blueprint
                     st.session_state["data_loaded"] = True
+                    st.session_state.pop("question_input", None)  # clear stale prompt
                     orchestrator.set_active_blueprint(blueprint)
                     st.success(
                         f"🎉 Warehouse ready! "
@@ -264,17 +377,18 @@ def main() -> None:
 
         st.subheader("Ask a question")
 
-        sample_prompts = [
-            f"Show the top 10 items by total revenue from {bp.fact_table}.",
-            "What is the monthly sales trend?",
-            "Find unusual patterns by region or category.",
-            "Compare segments by revenue and record count.",
-            "Summarize the key findings from the data.",
-        ]
-        chosen = st.selectbox("Quick prompt", [""] + sample_prompts, index=0)
+        # Dataset-specific quick prompts as clickable buttons
+        quick_prompts = _generate_quick_prompts(bp)
+        st.caption("Quick prompts — click any to load it into the question box:")
+        btn_cols = st.columns(2)
+        for i, prompt in enumerate(quick_prompts):
+            with btn_cols[i % 2]:
+                if st.button(prompt, key=f"qp_{i}", use_container_width=True):
+                    st.session_state["question_input"] = prompt
+
         question = st.text_area(
             "Your question",
-            value=chosen or "",
+            key="question_input",
             height=100,
             placeholder="e.g. Which category had the highest revenue last quarter?",
         )

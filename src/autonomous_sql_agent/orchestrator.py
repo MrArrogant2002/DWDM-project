@@ -98,25 +98,47 @@ class AnalysisOrchestrator:
                 execution_error = str(exc)
                 state.warnings.append(f"Execution attempt failed: {execution_error}")
         else:
-            # All retries exhausted — return partial response so the UI can show what failed
-            last_sql = state.sql_candidates[-1].sql if state.sql_candidates else ""
+            # All LLM retries exhausted — try rule-based fallback as last resort
+            logger.warning(
+                "All LLM retries failed. Attempting rule-based fallback SQL."
+            )
             state.warnings.append(
-                "All retry attempts exhausted. The SQL above could not execute. "
-                "Try rephrasing your question or check the error details in warnings."
+                "LLM-generated SQL could not execute after all retries. "
+                "Trying rule-based fallback query…"
             )
-            logger.warning("All retries failed. Last SQL:\n%s", last_sql)
-            return AnalysisResponse(
-                answer_markdown="",
-                approved_sql=last_sql,
-                preview_rows=[],
-                chart_spec=None,
-                downloads=DownloadArtifacts(),
-                warnings=state.warnings,
-                follow_up_questions=[],
-                needs_summary=False,
-                result_df=pd.DataFrame(),
-                analysis_plan=state.analysis_plan,
+            fallback = self.sql_generation_agent.generator._fallback_candidate(
+                state.question, state.schema_context
             )
+            state.sql_candidates.append(fallback)
+            state = self.sql_validation_agent.run(state)
+
+            fallback_ok = False
+            if state.validation and state.validation.is_valid:
+                try:
+                    state = self.execution_agent.run(state)
+                    fallback_ok = True
+                except Exception as exc:
+                    state.warnings.append(f"Rule-based fallback also failed: {exc}")
+            else:
+                state.warnings.append(
+                    "Rule-based fallback did not pass SQL validation."
+                )
+
+            if not fallback_ok:
+                last_sql = state.sql_candidates[-1].sql if state.sql_candidates else ""
+                return AnalysisResponse(
+                    answer_markdown="",
+                    approved_sql=last_sql,
+                    preview_rows=[],
+                    chart_spec=None,
+                    downloads=DownloadArtifacts(),
+                    warnings=state.warnings,
+                    follow_up_questions=[],
+                    needs_summary=False,
+                    result_df=pd.DataFrame(),
+                    analysis_plan=state.analysis_plan,
+                )
+            # fallback_ok → fall through to pattern analysis below
 
         state = self.pattern_agent.run(state)
         state = self.report_agent.run(state)
